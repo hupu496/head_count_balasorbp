@@ -1,0 +1,108 @@
+{% load i18n static theme_material_kit %}
+
+<!-- Navbar Light -->
+  <!-- Navbar -->
+<div class="container position-sticky z-index-sticky top-0"><div class="row"><div class="col-12">
+<nav class="navbar navbar-expand-lg  blur border-radius-xl top-0 z-index-fixed shadow position-absolute my-3 py-2 start-0 end-0 mx-4">
+  <div class="container-fluid">
+    <a class="navbar-brand font-weight-bolder ms-sm-3" href="/" rel="tooltip" title="Designed and Coded by ComsysIT" data-placement="bottom" target="_blank">
+     IOCL
+    </a>
+    <button class="navbar-toggler shadow-none ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navigation" aria-controls="navigation" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon mt-2">
+        <span class="navbar-toggler-bar bar1"></span>
+        <span class="navbar-toggler-bar bar2"></span>
+        <span class="navbar-toggler-bar bar3"></span>
+      </span>
+    </button>
+    <div class="d-flex justify-content-end mb-3">
+    <div class="collapse navbar-collapse pt-3 pb-2 py-lg-0" id="navigation">
+      <ul class="navbar-nav navbar-nav-hover ms-lg-12 ps-lg-5 w-100">
+        <li class=" p-1 nav-item dropdown dropdown-hover ms-lg-auto my-auto ms-3 ms-lg-0">
+          <a class="nav-link ps-2 d-flex cursor-pointer align-items-center" id="dropdownMenuPages" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="material-icons opacity-6 me-2 text-md">dashboard</i>
+            Add Master
+           
+          </a>
+          <div class="dropdown-menu dropdown-menu-animation ms-n3 dropdown-md p-3 border-radius-lg mt-0 mt-lg-3" aria-labelledby="dropdownMenuPages">
+            <div class="d-none d-lg-block">
+              <a href="{% url 'comp_master' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
+   <span class="material-icons opacity-6 me-2 text-md">
+home
+</span>
+  Company Master
+  </a>
+   <a href="{% url 'machine_master' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
+   <span class="material-icons opacity-6 me-2 text-md">
+videogame_asset
+</span>
+
+  Machine Master
+  </a>
+  <a href="{% url 'depart_master' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
+   <span class="material-icons opacity-6 me-2 text-md">
+shop_2
+</span>
+  Department Master
+  </a>
+  <a href="{% url 'des_master' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
+    <span class="material-icons opacity-6 me-2 text-md">
+assignment_ind
+</span>
+ Designation Master
+  </a>
+  <a href="{% url 'enroll_mast' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
+     <span class="material-icons opacity-6 me-2 text-md">manage_accounts</span>
+   EnrollID Master
+  </a>
+   <a href="{% url 'emp_master' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
+     <span class="material-icons opacity-6 me-2 text-md">manage_accounts</span>
+   Employee Master
+  </a>
+    <!--  <a href="{% url 'con_mismatch' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
+     <span class="material-icons opacity-6 me-2 text-md">block</span>
+  OUT Console Mismatch
+  </a> -->
+  <a href="{% url 'in_console' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
+     <span class="material-icons opacity-6 me-2 text-md">block</span>
+  Console Mismatch
+  </a>
+  
+  
+</div>
+
+
+
+          </div>
+        </li>
+
+       
+       
+      <!--   <li class="nav-item ms-lg-auto my-auto ms-3 ms-lg-0">
+          
+          <a href="https://www.creative-tim.com/product/material-kit" class="btn btn-sm  bg-gradient-primary  mb-0 me-1 mt-2 mt-md-0">Free Download</a></li> -->
+     
+        <li class=" p-1 nav-item dropdown dropdown-hover ms-lg-auto my-auto ms-3 ms-lg-0">
+          <a class="nav-link ps-2 d-flex cursor-pointer align-items-center" href="{% url 'logout' %}">
+            <i class="material-icons opacity-6 me-2 text-md">person_pin</i>
+           Logout
+           
+          </a>
+         
+        </li>
+
+       
+       
+      <!--   <li class="nav-item ms-lg-auto my-auto ms-3 ms-lg-0">
+          
+          <a href="https://www.creative-tim.com/product/material-kit" class="btn btn-sm  bg-gradient-primary  mb-0 me-1 mt-2 mt-md-0">Free Download</a></li> -->
+      </ul>
+    </div>
+    </div>
+  </div>
+</nav>
+<!-- End Navbar -->
+</div></div></div>
+
+  
+<!-- End Navbar -->

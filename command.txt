@@ -1,0 +1,2 @@
+celery -A core worker --loglevel=info
+celery -A core beat --loglevel=info

@@ -1,0 +1,117 @@
+{% load i18n static theme_material_kit %}
+
+
+<!-- Navbar -->
+<div class="container position-sticky z-index-sticky top-0">
+  <div class="row">
+    <div class="col-12">
+      <nav
+        class="navbar navbar-expand-lg  blur border-radius-xl top-0 mt-4 z-index-fixed shadow position-absolute my-3 py-2 start-0 end-0 mx-4">
+        <div class="container-fluid px-0">
+          <a class="navbar-brand font-weight-bolder ms-sm-3" href="/"
+            rel="tooltip" title="Designed and Coded by ComsysIT" data-placement="bottom">
+           IOCL
+          </a>
+          <button class="navbar-toggler shadow-none ms-2" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navigation" aria-controls="navigation" aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon mt-2">
+              <span class="navbar-toggler-bar bar1"></span>
+              <span class="navbar-toggler-bar bar2"></span>
+              <span class="navbar-toggler-bar bar3"></span>
+            </span>
+          </button>
+          <div class="collapse navbar-collapse pt-3 pb-2 py-lg-0 w-100" id="navigation">
+            <ul class="navbar-nav navbar-nav-hover ms-auto">
+               <li class="nav-item ms-lg-auto">
+                  <a class="nav-link nav-link-icon me-2" href="{% url 'category' %}" >
+                    <i class="fa fa-th-large" aria-hidden="true"></i>
+                    <p class="d-inline text-sm z-index-1 font-weight-bold" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-bs-original-title="Get Sources">CATEGORY</p>
+                  </a>
+                  
+                </li>
+                    
+                    
+             
+                    <li class="nav-item ms-lg-auto">
+                  <a class="nav-link nav-link-icon me-2" href="{% url 'report' %}" >
+                    <i class="fa fa-download me-1" aria-hidden="true"></i>
+                    <p class="d-inline text-sm z-index-1 font-weight-bold" data-bs-toggle="tooltip" data-bs-placement="bottom" title="" data-bs-original-title="Get Sources">REPORT</p>
+                  </a>
+                  
+                </li>
+                <li class="nav-item ms-lg-auto">
+                    
+    <button type="button" class="btn btn-block btn-default mb-3 font-weight-bold" data-bs-toggle="modal" data-bs-target="#modal-form">Sign in</button>
+   
+
+                </li>
+              
+            </ul>
+          </div>
+        </div>
+      </nav>
+      <!-- End Navbar -->
+    </div>
+  </div>
+</div>
+
+ <div class="modal fade" id="modal-form" tabindex="-1" role="dialog" aria-labelledby="modal-form" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content">
+          <div class="modal-body p-0">
+            <div class="card card-plain">
+              <div class="card-header pb-0 text-left">
+                <h3 class="font-weight-bolder text-warning text-gradient">IOCL Master</h3>
+               
+              </div>
+              <div class="card-body">
+                {% if messages %}
+                  {% for message in messages %}
+                    <p>{{ message }}</p>
+                  {% endfor %}
+                {% endif %}
+                <form id="loginForm" method="POST" role="form text-left">
+                  {% csrf_token %}
+                  <label>Username</label>
+                  <div class="input-group mb-3">
+                    <input type="text" name="username" class="form-control" placeholder="Username" aria-label="Email" aria-describedby="email-addon">
+                  </div>
+                  <label>Password</label>
+                  <div class="input-group mb-3">
+                    <input type="password" name="password" class="form-control" placeholder="Password" aria-label="Password" aria-describedby="password-addon">
+                  </div>
+                  <div class="text-center">
+                    <button type="submit" class="btn btn-round bg-warning btn-lg w-100 mt-4 mb-0">Sign in</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- script to post data to Django view -->
+   <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script> -->
+<script>
+ $(document).ready(function() {
+        $('#loginForm').on('submit', function(event) {
+            event.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: '{% url "login" %}',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        window.location.href = response.redirect_url;
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            });
+        });
+    });
+</script>

@@ -1,0 +1,180 @@
+{% extends 'layouts/base_background.html' %}
+{% load static %}
+{% block css %}
+.mt-n6 {
+    margin-top: 0rem !important;
+}
+.text-gradient.text-primary {
+    background-image: linear-gradient(195deg, #021750, #021750);
+}
+.green-section {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+        }
+  .red-section {
+            background-color: #f44335;;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+        }
+.btn-primary {
+    --bs-btn-color: #000;
+    --bs-btn-bg: #f37022;
+    --bs-btn-border-color: #f37022;
+  }
+  .Cd{
+    border-style: solid;
+  border-color: #3e4f7a;
+  border-radius: 9px;
+  }
+   
+  
+        .scrollbar-none {
+            scrollbar-width: none;
+           
+            height: 180px;
+           
+            overflow-y: scroll;
+        }
+  
+ {% endblock css %}
+{% block title %} IOCL | Head Count System {% endblock title %}
+
+{% block body %} class="index-page bg-gray-200" {% endblock body %}
+
+{% block content %}
+
+</div></div></div>
+ {% load static %}
+<div class="card card-body blur shadow-blur mx-3 mx-md-4  mt-n6">
+  <b class="text-center text-success" style="font-size: 24px"><img src="{% static 'img/indianOil.png' %}" width="14%">GATE WISE HEAD COUNT DISPLAY BALASORE BP ON &nbsp; &nbsp; <form method="post" style="display:inline;">
+                {% csrf_token %}
+                {{ form.selected_date }}
+                <button type="submit" class="btn btn-sm bg-gradient-success" style="margin-top: 10px;" >Refresh</button>
+            </form></b>
+ <!--  <b class="text-center">GATE WISE HEAD COUNT DISPLAY KANDLA LPG IMPORT TERMINAL ON &nbsp; &nbsp;<input type="date" style="height: 30px; font-size: 18px; padding: 5px; margin-bottom:15px; border-radius: 8px;"></b> -->
+<section class="Cd pt-3 pb-4" id="count-stats">
+
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-12 mx-auto">
+        <div class="row">
+           {% for gate, entries in data.items %}
+           <div class="col-md-3 position-relative">
+           
+            <div class="p-3 text-center" style="
+    border: 5px solid #4caf50;border-image: linear-gradient(#01154d, #eb6c21) 1;
+    border-radius: 30px;
+">
+              <h1 class="text-gradient text-primary"><i class="fas fa-walking"></i></h1>
+             
+              <h4 class="text-gradient text-primary"><i class="far fa-check-circle"></i>{{ gate|title }} AREA</h4>
+              
+            </div>
+            <hr class="vertical dark">
+          </div>
+          <div class="col-md-9 position-relative">
+            <div class="card">
+              <table class="table align-items-center mb-0">
+      <thead>
+        <tr>
+          <th class="">Department</th>
+          <th class="">Total</th>
+          
+        </tr>
+      </thead>
+    </table>
+  <div class="table-responsive scrollbar-none">
+    <table class="table align-items-center mb-0">
+    <thead>
+        <!-- You can add headers here if needed -->
+    </thead>
+    <tbody>
+        {% for department in departments %}
+        <tr>
+            <td>
+                <h6 class="mb-0 text-xs">{{ department.DepartName }}</h6>
+            </td>
+            <td>
+                {% with count=0 %}
+                    {% for entry in entries %}
+                        {% if entry.employee.department == department.DepartName %}
+                          {% if forloop.last %}
+           <p class="text-xs font-weight-bold mb-0 green-section">{{ forloop.counter }}</p>
+                 {% endif %}
+                           
+                        {% endif %}
+                    {% endfor %}
+                   
+                {% endwith %}
+            </td>
+        </tr>
+        
+        {% endfor %}
+    </tbody>
+</table>
+  </div>
+</div>
+          </div>
+         {% endfor %}
+          
+<!--  -->
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+<!-- <p>{{ context }}</p> -->
+{% endblock content %}
+{% block javascripts %}
+<!--  Plugin for TypedJS, full documentation here: https://github.com/inorganik/CountUp.js -->
+<script src="{% static 'js/plugins/countup.min.js' %}"></script>
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script src="{% static 'js/plugins/prism.min.js' %}"></script>
+<script src="{% static 'js/plugins/highlight.min.js' %}"></script>
+<!--  Plugin for Parallax, full documentation here: https://github.com/dixonandmoe/rellax -->
+<script src="{% static 'js/plugins/rellax.min.js' %}"></script>
+<!--  Plugin for TiltJS, full documentation here: https://gijsroge.github.io/tilt.js/ -->
+<script src="{% static 'js/plugins/tilt.min.js' %}"></script>
+<!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+
+
+<!-- <script>
+    setTimeout(function(){
+        location.reload();
+    }, 10000);  // 10000 milliseconds = 10 seconds
+</script> -->
+<script type="text/javascript">
+
+  if (document.getElementById('state1')) {
+    const countUp = new CountUp('state1', document.getElementById("state1").getAttribute("countTo"));
+    if (!countUp.error) {
+      countUp.start();
+    } else {
+      console.error(countUp.error);
+    }
+  }
+  if (document.getElementById('state2')) {
+    const countUp1 = new CountUp('state2', document.getElementById("state2").getAttribute("countTo"));
+    if (!countUp1.error) {
+      countUp1.start();
+    } else {
+      console.error(countUp1.error);
+    }
+  }
+  if (document.getElementById('state3')) {
+    const countUp2 = new CountUp('state3', document.getElementById("state3").getAttribute("countTo"));
+    if (!countUp2.error) {
+      countUp2.start();
+    } else {
+      console.error(countUp2.error);
+    };
+  }
+</script>
+
+{% endblock javascripts %}

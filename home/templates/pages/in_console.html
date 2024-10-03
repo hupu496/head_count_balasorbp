@@ -1,0 +1,185 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% block css %}
+
+.bg-gradient-dark {
+    --bs-btn-color: #000;
+    --bs-btn-bg: #f37022;
+    --bs-btn-border-color: #f37022;
+  }
+  
+ {% endblock css %}
+
+{% block title %} IOCL | Head Count System {% endblock title %}
+
+{% block body %} class="index-page bg-gray-200" {% endblock body %}
+
+{% block content %}
+
+</div></div></div>
+
+<div class="card card-body blur shadow-blur mx-3 mx-md-4 mt-n4">
+  <section class="pt-3 pb-4" id="count-stats">
+  <div class="container">
+    <div class="row">
+        
+    <div class="col-md-12">
+         <h3 class="text-center">Console Mismatch List</h3>
+        <div class="text-center">
+           <form method="post" style="display:inline; text-align: center;">
+                {% csrf_token %}
+                {{ form.selected_date }}
+                <button type="submit" class="btn btn-sm bg-gradient-success" style="margin-top: 10px;" >OK</button>
+            </form>
+        </div>
+        <div class="table-responsive">
+        <table id="myTable" class="table data-table stripe hover nowrap align-items-center mb-0 display">
+    <thead>
+        <tr>
+            <th class="text-uppercase text-secondary font-weight-bolder opacity-7">Gate</th>
+            <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">EnrollID</th>
+            <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">Name</th>
+            <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">In Time</th>
+            <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">Out Time</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for data in gate_wise_data %}
+        <tr>
+            <td>
+                <div class="d-flex px-2 py-1">
+                    <div></div>
+                    <div class="d-flex flex-column justify-content-center">
+                        <h6 class="mb-0 text-xs">{{ data.gate_name }}</h6>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <p class="text-xs font-weight-bold mb-0">{{ data.enrollid }}</p>
+            </td>
+            <td>
+                <p class="text-xs font-weight-bold mb-0">{{ data.name }}</p>
+            </td>
+            <td>
+                <p class="text-xs font-weight-bold mb-0">{{ data.in_time }}</p>
+            </td>
+            <td>
+                <p class="text-xs font-weight-bold mb-0">{{ data.out_time }}</p>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+  </div>
+
+  
+   
+    
+      
+    </div>
+  </div>
+
+ 
+</section>
+</div>
+ <div class="modal fade" id="modal-notification" tabindex="-1" role="dialog" aria-labelledby="modal-notification" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Insert IN Gate Entry</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="enrollid" id="modal-enrollid">
+          <input type="hidden" name="gate" id="modal-gate">
+          <input type="hidden" name="response" id="modal-response">
+          <div class="mb-3">
+            <label for="in_time" class="form-label">IN Time</label>
+            <input type="time" class="form-control" id="modal-in_time" name="in_time" required>
+          </div>
+          <button type="submit" class="btn btn-primary" name="action" value="insert">Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+{% block javascripts %}
+<!--  Plugin for TypedJS, full documentation here: https://github.com/inorganik/CountUp.js -->
+<script src="{% static 'js/plugins/countup.min.js' %}"></script>
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script src="{% static 'js/plugins/prism.min.js' %}"></script>
+<script src="{% static 'js/plugins/highlight.min.js' %}"></script>
+<!--  Plugin for Parallax, full documentation here: https://github.com/dixonandmoe/rellax -->
+<script src="{% static 'js/plugins/rellax.min.js' %}"></script>
+<!--  Plugin for TiltJS, full documentation here: https://gijsroge.github.io/tilt.js/ -->
+<script src="{% static 'js/plugins/tilt.min.js' %}"></script>
+<!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script type="text/javascript">
+  //    document.addEventListener('DOMContentLoaded', function () {
+  //   const modal = document.getElementById('modal-notification');
+  //   modal.addEventListener('show.bs.modal', function (event) {
+  //     const button = event.relatedTarget;
+  //     const enrollid = button.getAttribute('data-enrollid');
+  //     const gate = button.getAttribute('data-gate');
+  //     const response = button.getAttribute('data-response');
+  //     const out_time = button.getAttribute('data-out_time');
+  //     const modalEnrollid = modal.querySelector('#modal-enrollid');
+  //     const modalGate = modal.querySelector('#modal-gate');
+  //     const modalResponse = modal.querySelector('#modal-response');
+  //     const modalInTime = modal.querySelector('#modal-in_time');
+  //     modalEnrollid.value = enrollid;
+  //     modalGate.value = gate;
+  //     modalResponse.value = response;
+  //     modalInTime.value = out_time;  // Initialize the IN time to the previous out time
+  //   });
+  // });
+   $(document).ready(function(e) {
+        var table=$('.data-table').DataTable({
+            scrollCollapse: true,
+            autoWidth: false,
+            responsive: true,
+            dom: 'Bfrtip',
+               buttons: [
+                {
+                    extend: 'collection',
+                    className: 'btn btn-warning',
+                    buttons: [
+                {
+                    extend: 'pdf',
+                    className: 'btn btn-danger',
+                    text: 'PDF'
+                },
+                {
+                    extend: 'csv',
+                    className: 'btn btn-success',
+                    text: 'CSV'
+                },
+                {
+                    extend: 'excel',
+                    className: 'btn btn-info',
+                    text: 'Excel'
+                }
+            ]
+                }
+            ],
+            columnDefs: [{
+                targets: "datatable-nosort",
+                orderable: false,
+            }],
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "language": {
+                "info": "_START_-_END_ of _TOTAL_ entries",
+                searchPlaceholder: "Search"
+            },
+        });
+        new $.fn.dataTable.FixedHeader( table );
+         
+        
+        
+    });
+</script>
+{% endblock javascripts %}

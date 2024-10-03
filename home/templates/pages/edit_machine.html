@@ -1,0 +1,135 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% block css %}
+
+.bg-gradient-dark {
+    --bs-btn-color: #000;
+    --bs-btn-bg: #f37022;
+    --bs-btn-border-color: #f37022;
+  }
+  
+ {% endblock css %}
+
+{% block title %} IOCL | Head Count System {% endblock title %}
+
+{% block body %} class="index-page bg-gray-200" {% endblock body %}
+
+{% block content %}
+
+</div></div></div>
+
+<div class="card card-body blur shadow-blur mx-3 mx-md-4 mt-n4">
+  <section class="pt-3 pb-4" id="count-stats">
+  <div class="container">
+    <div class="row">
+        <div class="col-md-8 my-2">
+          <form method="POST">
+            {% csrf_token %}
+            <h3 class="text-center">Edit Machine</h3>
+             <b >Machine No:</b>
+        <div class="input-group input-group-outline is-valid my-3">
+     
+        <input type="text" class="form-control" name="machineno" value="{{ form.instance.machineno }}">
+        </div>
+               <b >Machine Serial No:</b>
+        <div class="input-group input-group-outline is-valid my-3">
+     
+        <input type="text" class="form-control" name="SRNO" value="{{ form.instance.SRNO }}">
+        </div>
+           <b >Device Model:</b>
+          <div class="input-group input-group-outline is-valid my-3">
+       
+        <input type="text" class="form-control" name="devicemodel" value="{{ form.instance.devicemodel }}">
+        </div>
+         <b>Name:</b>
+        <div class="input-group input-group-outline is-valid my-3">
+       
+        <input type="text" class="form-control" name="Name" value="{{ form.instance.Name }}">
+        </div>
+         <b>Response:</b>
+        <div class="input-group input-group-outline is-valid my-3">
+        <input type="text" class="form-control" name="Response" value="{{ form.instance.Response }}">
+        </div>
+    <button href="{% url 'machine_master' %}" class="btn btn-warning w-100">Submit</button>
+    </form>
+        </div> 
+    
+  
+   
+    
+      
+    </div>
+  </div>
+</section>
+</div>
+{% endblock content %}
+{% block javascripts %}
+<!--  Plugin for TypedJS, full documentation here: https://github.com/inorganik/CountUp.js -->
+<script src="{% static 'js/plugins/countup.min.js' %}"></script>
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script src="{% static 'js/plugins/prism.min.js' %}"></script>
+<script src="{% static 'js/plugins/highlight.min.js' %}"></script>
+<!--  Plugin for Parallax, full documentation here: https://github.com/dixonandmoe/rellax -->
+<script src="{% static 'js/plugins/rellax.min.js' %}"></script>
+<!--  Plugin for TiltJS, full documentation here: https://gijsroge.github.io/tilt.js/ -->
+<script src="{% static 'js/plugins/tilt.min.js' %}"></script>
+<!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script type="text/javascript">
+   $(document).ready(function(e) {
+        var table=$('.data-table').DataTable({
+            scrollCollapse: true,
+            autoWidth: false,
+            responsive: true,
+            dom: 'Bfrtip',
+             buttons: [
+                {
+                    extend: 'collection',
+                    className: 'btn btn-warning',
+                    buttons: [
+                        
+                        'pdf',
+                        'csv',
+                        'excel',
+                        
+                    ]
+                }
+            ],
+            columnDefs: [{
+                targets: "datatable-nosort",
+                orderable: false,
+            }],
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "language": {
+                "info": "_START_-_END_ of _TOTAL_ entries",
+                searchPlaceholder: "Search"
+            },
+        });
+        new $.fn.dataTable.FixedHeader( table );
+         
+        $('body').one('click','.delete',function(){
+            var id = $(this).data('value');
+            var prompt = confirm("Are you Sure you want to delete?");
+            if(prompt){
+                
+                $.ajax({
+                    url:"<?php echo base_url('admin/service/delete_service')?>",
+                    method:"POST",
+                    data:{id:id},
+                    success:function(data){
+                        if(data == 1){
+                             swal("Deleted !", "You clicked the button!", "success");
+                        }
+                        else{
+                            swal("Oops!", "Something Error!", "error");
+                        }
+                        
+                        
+                    }
+                });
+            }
+        });
+        
+    });
+</script>
+{% endblock javascripts %}

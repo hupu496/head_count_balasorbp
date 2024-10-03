@@ -1,0 +1,243 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% block css %}
+
+.bg-gradient-dark {
+    --bs-btn-color: #000;
+    --bs-btn-bg: #f37022;
+    --bs-btn-border-color: #f37022;
+  }
+  
+ {% endblock css %}
+
+{% block title %} IOCL | Head Count System {% endblock title %}
+
+{% block body %} class="index-page bg-gray-200" {% endblock body %}
+
+{% block content %}
+
+</div></div></div>
+
+<div class="card card-body blur shadow-blur mx-3 mx-md-4 mt-n4">
+  <section class="pt-3 pb-4" id="count-stats">
+  <div class="container">
+    <div class="row">
+        <div class="col-md-4 my-2">
+    <form method="POST">
+    {% csrf_token %}
+    <h3 class="text-center">Add EnrollID</h3>
+
+    <div class="input-group input-group-outline is-valid my-3">
+        <select name="DepartId" id="department-select" class="form-control" onchange="checkDepartment()">
+            <option>Select Department</option>
+            {% for list in departlist %}
+                <option value="{{ list.DepartId }}">{{ list.DepartName }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Container for the From input -->
+    <div id="from-input-container" class="input-group input-group-outline is-valid my-3">
+        <!-- <label class="form-label">From</label> -->
+        <input type="text" class="form-control" name="froms" id="froms" placeholder="From">
+    </div>
+
+    <!-- Container for the To input -->
+    <div id="to-input-container" class="input-group input-group-outline is-valid my-3">
+      <!--   <label class="form-label">To</label> -->
+        <input type="text" class="form-control" name="to" id="to" placeholder="To">
+    </div>
+
+    <button class="btn btn-warning w-100" id="submit-button" disabled>Submit</button>
+</form>
+        </div> 
+    <div class="col-md-8">
+         <h3 class="text-center">EnrollID List</h3>
+        <div class="table-responsive">
+         <table id="myTable" class="table data-table stripe hover nowrap align-items-center mb-0 display">
+         <thead>
+        <tr>
+          <th class="text-uppercase text-secondary  font-weight-bolder opacity-7">SNO</th>
+          <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">EnrollID</th>
+           <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">Department</th>
+          
+          
+          <th class="text-secondary opacity-7">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+   {% for data in enrollid_list %}
+<tr>
+  <td>
+    <div class="d-flex px-2 py-1">
+      <div></div>
+      <div class="d-flex flex-column justify-content-center">
+        <h6 class="mb-0 text-xs">{{ data.counter }}</h6>
+      </div>
+    </div>
+  </td>
+  <td>
+    <p class="text-xs font-weight-bold mb-0">{{ data.enrolllist.enrollid }}</p>
+  </td>
+  <td>
+    <!-- Display department name associated with the enroll -->
+    <p class="text-xs font-weight-bold mb-0">{{ data.enrolllist.department.DepartName }}</p>
+  </td>
+  <td class="align-middle">
+    <a class="btn btn-sm btn-danger" href="{% url 'delete_enroll' data.enrolllist.id %}">
+      <span class="material-icons opacity-6 me-2 text-md">
+        delete
+      </span>
+    </a>
+  </td>
+</tr>
+{% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  
+   
+    
+      
+    </div>
+  </div>
+</section>
+</div>
+{% endblock content %}
+{% block javascripts %}
+<!--  Plugin for TypedJS, full documentation here: https://github.com/inorganik/CountUp.js -->
+<script src="{% static 'js/plugins/countup.min.js' %}"></script>
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script src="{% static 'js/plugins/prism.min.js' %}"></script>
+<script src="{% static 'js/plugins/highlight.min.js' %}"></script>
+<!--  Plugin for Parallax, full documentation here: https://github.com/dixonandmoe/rellax -->
+<script src="{% static 'js/plugins/rellax.min.js' %}"></script>
+<!--  Plugin for TiltJS, full documentation here: https://gijsroge.github.io/tilt.js/ -->
+<script src="{% static 'js/plugins/tilt.min.js' %}"></script>
+<!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script type="text/javascript">
+   $(document).ready(function(e) {
+        var table=$('.data-table').DataTable({
+            scrollCollapse: true,
+            autoWidth: false,
+            responsive: true,
+            dom: 'Bfrtip',
+               buttons: [
+                {
+                    extend: 'collection',
+                    className: 'btn btn-warning',
+                    buttons: [
+                {
+                    extend: 'pdf',
+                    className: 'btn btn-danger',
+                    text: 'PDF'
+                },
+                {
+                    extend: 'csv',
+                    className: 'btn btn-success',
+                    text: 'CSV'
+                },
+                {
+                    extend: 'excel',
+                    className: 'btn btn-info',
+                    text: 'Excel'
+                }
+            ]
+                }
+            ],
+            columnDefs: [{
+                targets: "datatable-nosort",
+                orderable: false,
+            }],
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "language": {
+                "info": "_START_-_END_ of _TOTAL_ entries",
+                searchPlaceholder: "Search"
+            },
+        });
+        new $.fn.dataTable.FixedHeader( table );
+         
+        $('body').one('click','.delete',function(){
+            var id = $(this).data('value');
+            var prompt = confirm("Are you Sure you want to delete?");
+            if(prompt){
+                
+                $.ajax({
+                    url:"<?php echo base_url('admin/service/delete_service')?>",
+                    method:"POST",
+                    data:{id:id},
+                    success:function(data){
+                        if(data == 1){
+                             swal("Deleted !", "You clicked the button!", "success");
+                        }
+                        else{
+                            swal("Oops!", "Something Error!", "error");
+                        }
+                        
+                        
+                    }
+                });
+            }
+        });
+        
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const fromInput = document.getElementById('froms');
+        const toInput = document.getElementById('to');
+        const submitButton = document.getElementById('submit-button');
+
+        function validateInputs() {
+            const fromValue = parseFloat(fromInput.value);
+            const toValue = parseFloat(toInput.value);
+
+            if (!isNaN(fromValue) && !isNaN(toValue) && toValue > fromValue) {
+                submitButton.disabled = false;
+            } else {
+                submitButton.disabled = true;
+            }
+        }
+
+        fromInput.addEventListener('input', validateInputs);
+        toInput.addEventListener('input', validateInputs);
+    });
+</script>
+<script>
+    function checkDepartment() {
+        const departmentSelect = document.getElementById('department-select');
+        const fromInputContainer = document.getElementById('from-input-container');
+        const toInputContainer = document.getElementById('to-input-container');
+        const submitButton = document.getElementById('submit-button');
+        
+        const selectedDepartment = departmentSelect.options[departmentSelect.selectedIndex].text; // Get the department name
+        console.log(selectedDepartment);
+
+        if (selectedDepartment === 'OFFICER IOCL') {
+            // Show "Enroll ID" input
+            fromInputContainer.innerHTML = `
+                <label class="form-label">Enroll ID</label>
+                <input type="text" class="form-control" name="enrollid" id="enrollid">`;
+
+            // Hide "To" input
+            toInputContainer.style.display = 'none';
+        } else {
+            // Restore "From" and "To" inputs
+            fromInputContainer.innerHTML = `
+                <label class="form-label">From</label>
+                <input type="text" class="form-control" name="froms" id="froms">`;
+            toInputContainer.innerHTML = `
+                <label class="form-label">To</label>
+        <input type="text" class="form-control" name="to" id="to">`;
+            toInputContainer.style.display = '';  // Ensure "To" input is shown again
+        }
+        
+        // Enable the submit button once a department is selected
+        submitButton.disabled = false;
+    }
+</script>
+
+{% endblock javascripts %}

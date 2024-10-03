@@ -1,0 +1,243 @@
+{% extends 'layouts/base_background.html' %}
+{% load static %}
+{% block css %}
+.mt-n6 {
+margin-top: 0rem !important;
+}
+.text-gradient.text-primary {
+background-image: linear-gradient(195deg, #021750, #021750);
+}
+.btn-primary {
+--bs-btn-color: #000;
+--bs-btn-bg: #f37022;
+--bs-btn-border-color: #f37022;
+}
+.Cd{
+border-style: solid;
+border-color: #3e4f7a;
+border-radius: 9px;
+}
+marquee {
+width: 100%;
+height: 100%;
+display: block;
+}
+/* Add this for watermark background */
+.watermark-background {
+    background-image: url("{% static 'img/IndianOil_background.jpg' %}");
+    background-size: cover; /* Ensures the image covers the entire container */
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.15; /* Controls the opacity of the watermark */
+    position: fixed; /* Keeps the background fixed during scrolling */
+    top: 0;
+    left: 0;
+    width: 100vw; /* Full viewport width */
+    height: 100vh; /* Full viewport height */
+    z-index: -1; /* Sends the image behind other content */
+}
+
+
+{% endblock css %}
+{% block title %} IOCL | Head Count System {% endblock title %}
+{% block body %} class="index-page bg-gray-200" {% endblock body %}
+{% block content %}
+</div></div></div>
+{% load static %}
+<div class="watermark-background"></div>
+<div class=" mx-3 mx-md-4 mt-n6">
+   <b class="text-center text-success" style="font-size: 24px">
+      <img src="{% static 'img/indianOil.png' %}" width="20%">GATE WISE HEAD COUNT DISPLAY BALASORE BP ON&nbsp; &nbsp; 
+      <form method="post" style="display:inline;">
+         {% csrf_token %}
+         {{ form.selected_date }}
+         <button type="submit" class="btn btn-sm bg-gradient-success" style="margin-top: 10px;" >Refresh</button>
+      </form>
+   </b>
+   <section class="Cd pt-3 pb-4" id="count-stats">
+      <div class="container-fluid">
+         <div class="row">
+            <div class="col-lg-12 mx-auto py-4">
+               <div style="border: 5px solid transparent;border-image: linear-gradient(#01154d, #eb6c21) 1; border-radius: 21px; padding: 10px; position: relative;">
+                  <h2 style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background-color: white; padding: 0 10px; color: #4caf50;">NON HAZARDOUS AREA</h2>
+                  <div class="row">
+                     <div class="col-md-3 position-relative">
+                        <div class="p-3 text-center">
+                           <h1 class="text-gradient text-primary"><i class="fas fa-walking"></i></h1>
+                          
+                           <div >
+                              <h4 class="text-gradient text-primary"><i class="far fa-check-circle"></i>MAIN GATE</h4>
+                           </div>
+                        </div>
+                        <hr class="vertical dark">
+                     </div>
+                     <div class="col-md-3 position-relative">
+                        <div class="p-3 text-center">
+                           <h1 class="text-gradient text-primary"><i class="fas fa-users"></i></h1>
+                           <h5 class="mt-3">TOTAL HEAD COUNT</h5>
+                           <a href="list/MAIN GATE TOTAL HEAD COUNT" target="_blank" class="btn btn-icon btn-2 bg-gradient-success">
+                           <b style="font-size: 20px;">{{ non_hazard_total }}</b>
+                           </a>
+                        </div>
+                        <hr class="vertical dark">
+                     </div>
+                     <div class="col-md-3 position-relative">
+                        <div class="p-3 text-center">
+                           <h1 class="text-gradient text-primary"><i class="far fa-arrow-alt-circle-right"></i></h1>
+                           <h5 class="mt-3">IN</h5>
+                           <a href="list/MAIN GATE IN" target="_blank" class="btn btn-icon btn-2 bg-gradient-success">
+                           <b style="font-size: 20px;">{{ non_hazard_in }}</b>
+                           </a>
+                        </div>
+                        <hr class="vertical dark">
+                     </div>
+                     <div class="col-md-3">
+                        <div class="p-3 text-center">
+                           <h1 class="text-gradient text-primary"><i class="far fa-arrow-alt-circle-left"></i></h1>
+                           <h5 class="mt-3">OUT</h5>
+                           <a href="list/MAIN GATE OUT" target="_blank" class="btn btn-icon btn-2 bg-gradient-success">
+                           <b style="font-size: 20px;">{{ non_hazard_out }}</b>
+                           </a>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <!--  -->
+               <br>
+               <div style="border: 5px solid transparent;border-image: linear-gradient(#01154d, #eb6c21) 1; border-radius: 21px; padding: 10px; position: relative;">
+                  <h2 style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background-color: white; padding: 0 10px; color: #f44335;">HAZARDOUS AREA</h2>
+                  <div class="row">
+                     <div class="col-md-3 position-relative">
+                        <div class="p-3 text-center">
+                           <div >
+                              <h4 class="text-gradient text-primary"><i class="far fa-check-circle"></i>GATE3 AREA</h4>
+                           </div>
+                        </div>
+                        <hr class="vertical dark">
+                     </div>
+                     <div class="col-md-3 position-relative">
+                        <div class="p-3 text-center">
+                           <h1 class="text-gradient text-primary"></h1>
+                           <!--   <h5 class="mt-3">TOTAL HEAD COUNT</h5> -->
+                           <a href="list/GATE3 TOTAL HEAD COUNT" target="_blank" class="btn btn-icon btn-2 btn btn-danger" >
+                           <b style="font-size: 20px;">{{ hazard_total }}</b>
+                           </a>
+                        </div>
+                        <hr class="vertical dark">
+                     </div>
+                     <div class="col-md-3 position-relative">
+                        <div class="p-3 text-center">
+                           <h1 class="text-gradient text-primary"></h1>
+                           <!--   <h5 class="mt-3">IN</h5> -->
+                           <a href="list/GATE3 IN" target="_blank" class="btn btn-icon btn-2 btn btn-danger" >
+                           <b style="font-size: 20px;">{{ hazard_in_count }}</b>
+                           </a>
+                        </div>
+                        <hr class="vertical dark">
+                     </div>
+                     <div class="col-md-3">
+                        <div class="p-3 text-center">
+                           <h1 class="text-gradient text-primary" ></h1>
+                           <!-- <h5 class="mt-3">OUT</h5> -->
+                           <a href="list/GATE3 OUT" target="_blank" class="btn btn-icon btn-2 btn btn-danger" >
+                           <b style="font-size: 20px;">{{ hazard_out_count }}</b>
+                           </a>
+                        </div>
+                     </div>
+                     <!--  -->
+                   
+                     
+                  </div>
+               </div>
+               <!--  -->
+            </div>
+         </div>
+      </div>
+</div>
+</section>
+<section class=" pt-1">
+   <div class="container">
+      <div class="row">
+         <div class="col-md-3"></div>
+         <div class="col-md-6">
+            <div class="d-flex justify-content-center" style="
+               height: 105px;
+               ">
+               <div class="p-2">
+                  <marquee direction="up" scrollamount="3">
+                     {% for item in data %}
+                     {% if item.machine.Name == 'Hazardous' or item.machine.Name == 'Hazardous Truck' %}
+                     <h4 style="color: #F44335;">EmpCode: {{ item.employee.empcode }}&nbsp;Name: {{ item.employee.Name }}&nbsp;Gate:{{ item.machine.Name }} &nbsp; Response:{{ item.machine.Response }}  </h4>
+                     {% elif item.machine.Name == 'Main Gate' or item.machine.Name == 'Truck Main Gate' %}
+                     <h4 style="color: #4CAF50;;">EmpCode: {{ item.employee.empcode }}&nbsp;Name: {{ item.employee.Name }}&nbsp;Gate:{{ item.machine.Name }} &nbsp; Response:{{ item.machine.Response }}  </h4>
+                     {% elif item.machine.Name == 'BG Gate' %}
+                     <h4 style="color: #4CAF50;;">EmpCode: {{ item.employee.empcode }}&nbsp;Name: {{ item.employee.Name }}&nbsp;Gate:{{ item.machine.Name }} &nbsp; Response:{{ item.machine.Response }}  </h4>
+                     {% elif item.machine.Name == 'Tank Gate' or item.machine.Name == 'Truck Tank Gate' %}
+                     <h4 style="color: #4CAF50;;">EmpCode: {{ item.employee.empcode }}&nbsp;Name: {{ item.employee.Name }}&nbsp;Gate:{{ item.machine.Name }} &nbsp; Response:{{ item.machine.Response }}  </h4>
+                     {% endif %}
+                     {% endfor %}
+                  </marquee>
+               </div>
+            </div>
+         </div>
+         <div class="col-md-3"></div>
+      </div>
+</section>
+</div>
+<!-- <p>{{ context }}</p> -->
+{% endblock content %}
+{% block javascripts %}
+<!--  Plugin for TypedJS, full documentation here: https://github.com/inorganik/CountUp.js -->
+<script src="{% static 'js/plugins/countup.min.js' %}"></script>
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script src="{% static 'js/plugins/prism.min.js' %}"></script>
+<script src="{% static 'js/plugins/highlight.min.js' %}"></script>
+<!--  Plugin for Parallax, full documentation here: https://github.com/dixonandmoe/rellax -->
+<script src="{% static 'js/plugins/rellax.min.js' %}"></script>
+<!--  Plugin for TiltJS, full documentation here: https://gijsroge.github.io/tilt.js/ -->
+<script src="{% static 'js/plugins/tilt.min.js' %}"></script>
+<!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<!-- <script>
+   setTimeout(function(){
+       location.reload();
+   }, 10000);  // 10000 milliseconds = 10 seconds
+   </script> -->
+<script type="text/javascript">
+   if (document.getElementById('state1')) {
+     const countUp = new CountUp('state1', document.getElementById("state1").getAttribute("countTo"));
+     if (!countUp.error) {
+       countUp.start();
+     } else {
+       console.error(countUp.error);
+     }
+   }
+   if (document.getElementById('state2')) {
+     const countUp1 = new CountUp('state2', document.getElementById("state2").getAttribute("countTo"));
+     if (!countUp1.error) {
+       countUp1.start();
+     } else {
+       console.error(countUp1.error);
+     }
+   }
+   if (document.getElementById('state3')) {
+     const countUp2 = new CountUp('state3', document.getElementById("state3").getAttribute("countTo"));
+     if (!countUp2.error) {
+       countUp2.start();
+     } else {
+       console.error(countUp2.error);
+     };
+   }
+</script>
+<script type="text/javascript">
+   setInterval(function() {
+     $.ajax({
+         url: "{% url 'home' %}",
+         success: function(data) {
+             // Update the page content without refreshing
+         }
+     });
+   }, 5000);  // Makes an AJAX call every 5 seconds
+   
+</script>
+{% endblock javascripts %}

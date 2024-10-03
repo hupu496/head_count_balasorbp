@@ -1,0 +1,302 @@
+{% extends 'layouts/base_background.html' %}
+{% load static %}
+
+{% block css %}
+.bg-gradient-primary {
+    background-image: linear-gradient(195deg, #021750 0%, #021750 100%);
+}
+.text-gradient.text-primary {
+    background-image: linear-gradient(195deg, #021750, #021750);
+}
+.btn-primary {
+    --bs-btn-color: #000;
+    --bs-btn-bg: #f37022;
+    --bs-btn-border-color: #f37022;
+}
+.btn-padding {
+    margin-top: 40px;
+}
+{% endblock css %}
+
+{% block title %}IOCL | Head Count System{% endblock title %}
+
+{% block body %} class="index-page bg-gray-200" {% endblock body %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="card card-body blur shadow-blur">
+    <form method="post" style="display:inline;">
+      {% csrf_token %}
+      <div class="row">
+        <div class="d-flex justify-content-center mb-3">
+          <div class="p-2">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="flexRadioDefault" id="customRadio1" value="dateWise" checked>
+              <label class="custom-control-label" for="customRadio1">Date Wise</label>
+            </div>
+          </div>
+          <div class="p-2">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="flexRadioDefault" id="customRadio2" value="gateWise">
+              <label class="custom-control-label" for="customRadio2">Gate Wise</label>
+            </div>
+          </div>
+          <div class="p-2">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="flexRadioDefault" id="customRadio3" value="employeeWise">
+              <label class="custom-control-label" for="customRadio3">Employee Wise</label>
+            </div>
+          </div>
+          <div class="p-2">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="flexRadioDefault" id="customRadio4" value="departmentWise">
+              <label class="custom-control-label" for="customRadio4">Department Wise</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2">
+          <div class="row g-3 align-items-center">
+            <div class="col-auto">
+              <label for="inputPassword6" class="col-form-label">Date</label>
+            </div>
+            <div class="col-auto input-group input-group-outline my-2">
+              {{ form.selected_date }}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="col-auto">
+            <label for="gateInput" class="col-form-label">Gate</label>
+          </div>
+          <div class="input-group input-group-outline my-2">
+            <select type="text" class="form-control" name="location" id="exampleFormControlSelect1" disabled>
+              {% for item in machine %}
+                <option value="{{ item.SRNO }}">{{ item.Name }}-{{ item.Response }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="col-auto">
+            <label for="employeeInput" class="col-form-label">Employee Name</label>
+          </div>
+          <div class="input-group input-group-outline my-2">
+            <select type="text" class="form-control" name="empcode" id="exampleFormControlSelect1" disabled>
+              {% for item in employee %}
+                <option value="{{ item.enrollid }}">{{ item.Name }}({{ item.empcode }})</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="col-auto">
+            <label for="departmentInput" class="col-form-label">Department</label>
+          </div>
+          <div class="input-group input-group-outline my-2">
+            <select type="text" class="form-control" name="department" id="exampleFormControlSelect1" disabled>
+              {% for item in department %}
+                <option value="{{ item.DepartId }}">{{ item.DepartName }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="col-md-1">
+          <br>
+          <div class="input-group input-group-outline is-valid my-4">
+            <button type="submit" class="btn btn-warning">OK</button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table id="myTable" class="table data-table stripe hover nowrap align-items-center mb-0 display">
+        <thead>
+          <tr>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Entry</th>
+            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Card No</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Name</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Machine Id</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Time</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Department</th>
+            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Designation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in data %}
+            <tr>
+              <td>
+                <div class="d-flex px-2 py-1">
+                  <div class="d-flex flex-column justify-content-center">
+                    <p class="text-xs text-secondary mb-0">{{ item.machine.Name }}({{ item.machine.Response }})</p>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <p class="text-xs font-weight-bold mb-0">{{ item.monitor.EnrollID }}</p>
+              </td>
+              <td class="align-middle text-center text-sm">
+                <span class="badge-sm badge-success">{{ item.employee.Name }}</span>
+              </td>
+              <td class="align-middle text-center">
+                <span class="text-secondary text-xs font-weight-normal">{{ item.monitor.PunchDate }}</span>
+              </td>
+              <td class="align-middle text-center">
+                <span class="text-secondary text-xs font-weight-normal">{{ item.machine.machineno }}</span>
+              </td>
+              <td class="align-middle text-center">
+                <span class="text-secondary text-xs font-weight-normal">{{ item.monitor.PunchDate|date:"h:i:s a" }}</span>
+              </td>
+              <td class="align-middle text-center">
+                <span class="text-secondary text-xs font-weight-normal">{{ item.employee.department.DepartName }}</span>
+              </td>
+              <td class="align-middle text-center">
+                <span class="text-secondary text-xs font-weight-normal">{{ item.employee.designation.Designation }}</span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<!-- Plugin for TypedJS, full documentation here: https://github.com/inorganik/CountUp.js -->
+<script src="{% static 'js/plugins/countup.min.js' %}"></script>
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script src="{% static 'js/plugins/prism.min.js' %}"></script>
+<script src="{% static 'js/plugins/highlight.min.js' %}"></script>
+<!-- Plugin for Parallax, full documentation here: https://github.com/dixonandmoe/rellax -->
+<script src="{% static 'js/plugins/rellax.min.js' %}"></script>
+<!-- Plugin for TiltJS, full documentation here: https://gijsroge.github.io/tilt.js/ -->
+<script src="{% static 'js/plugins/tilt.min.js' %}"></script>
+<!-- Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+
+<script type="text/javascript">
+  document.querySelectorAll('[name="flexRadioDefault"]').forEach((radio) => {
+    radio.addEventListener('change', () => {
+      const dateField = document.querySelector('input[name="selected_date"]');
+      const locationField = document.querySelector('select[name="location"]');
+      const empCodeField = document.querySelector('select[name="empcode"]');
+      const departField = document.querySelector('select[name="department"]');
+
+      if (radio.value === 'dateWise') {
+        dateField.disabled = false;
+        locationField.disabled = true;
+        empCodeField.disabled = true;
+        departField.disabled = true;
+      } else if (radio.value === 'gateWise') {
+        dateField.disabled = false;
+        locationField.disabled = false;
+        empCodeField.disabled = true;
+        departField.disabled = true;
+      } else if (radio.value === 'employeeWise') {
+        dateField.disabled = false;
+        locationField.disabled = true;
+        empCodeField.disabled = false;
+        departField.disabled = true;
+      } else if (radio.value === 'departmentWise') {
+        dateField.disabled = false;
+        locationField.disabled = true;
+        empCodeField.disabled = true;
+        departField.disabled = false;
+      }
+    });
+  });
+
+  $(document).ready(function() {
+    var table = $('.data-table').DataTable({
+      scrollCollapse: true,
+      autoWidth: false,
+      responsive: true,
+      dom: 'Bfrtip',
+      buttons: [
+        {
+          extend: 'collection',
+          className: 'btn btn-warning',
+          buttons: [
+            {
+              extend: 'pdf',
+              className: 'btn btn-danger btn-padding',
+              text: 'PDF'
+            },
+            {
+              extend: 'csv',
+              className: 'btn btn-success btn-padding',
+              text: 'CSV'
+            },
+            {
+              extend: 'excel',
+              className: 'btn btn-info btn-padding',
+              text: 'Excel'
+            }
+          ]
+        }
+      ],
+      columnDefs: [{
+        targets: "datatable-nosort",
+        orderable: false,
+      }],
+      "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+      "language": {
+        "info": "_START_-_END_ of _TOTAL_ entries",
+        searchPlaceholder: "Search"
+      },
+    });
+
+    new $.fn.dataTable.FixedHeader(table);
+
+    $('body').one('click', '.delete', function() {
+      var id = $(this).data('value');
+      var prompt = confirm("Are you sure you want to delete?");
+      if (prompt) {
+        $.ajax({
+          url: "<?php echo base_url('admin/service/delete_service')?>",
+          method: "POST",
+          data: { id: id },
+          success: function(data) {
+            if (data == 1) {
+              swal("Deleted!", "You clicked the button!", "success");
+            } else {
+              swal("Oops!", "Something went wrong!", "error");
+            }
+          }
+        });
+      }
+    });
+  });
+</script>
+
+<script type="text/javascript">
+  if (document.getElementById('state1')) {
+    const countUp = new CountUp('state1', document.getElementById("state1").getAttribute("countTo"));
+    if (!countUp.error) {
+      countUp.start();
+    } else {
+      console.error(countUp.error);
+    }
+  }
+  if (document.getElementById('state2')) {
+    const countUp1 = new CountUp('state2', document.getElementById("state2").getAttribute("countTo"));
+    if (!countUp1.error) {
+      countUp1.start();
+    } else {
+      console.error(countUp1.error);
+    }
+  }
+  if (document.getElementById('state3')) {
+    const countUp2 = new CountUp('state3', document.getElementById("state3").getAttribute("countTo"));
+    if (!countUp2.error) {
+      countUp2.start();
+    } else {
+      console.error(countUp2.error);
+    }
+  }
+</script>
+{% endblock javascripts %}

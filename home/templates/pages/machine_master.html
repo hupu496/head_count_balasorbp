@@ -1,0 +1,208 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% block css %}
+
+.bg-gradient-dark {
+    --bs-btn-color: #000;
+    --bs-btn-bg: #f37022;
+    --bs-btn-border-color: #f37022;
+  }
+  
+ {% endblock css %}
+
+{% block title %} IOCL | Head Count System {% endblock title %}
+
+{% block body %} class="index-page bg-gray-200" {% endblock body %}
+
+{% block content %}
+
+</div></div></div>
+
+<div class="card card-body blur shadow-blur mx-3 mx-md-4 mt-n4">
+  <section class="pt-3 pb-4" id="count-stats">
+  <div class="container">
+    <div class="row">
+        <div class="col-md-4 my-2">
+          <form method="POST">
+            {% csrf_token %}
+             <h3 class="text-center">Add Machine</h3>
+              <div class="input-group input-group-outline is-valid my-3">
+        <label class="form-label">Machine No</label>
+        <input type="text" class="form-control" name="machineno">
+        </div>
+              <div class="input-group input-group-outline is-valid my-3">
+        <label class="form-label">Machine Serial No</label>
+        <input type="text" class="form-control" name="SRNO">
+        </div>
+         <div class="input-group input-group-outline is-valid my-3">
+        <label class="form-label">Device Model</label>
+        <input type="text" class="form-control" name="devicemodel">
+        </div>
+        <div class="input-group input-group-outline is-valid my-3">
+        <label class="form-label">Name</label>
+        <input type="text" class="form-control" name="Name">
+        </div>
+        <div class="input-group input-group-outline is-valid my-3">
+        <label class="form-label">Response</label>
+        <input type="text" class="form-control" name="Response">
+        </div>
+    <button href="{% url 'machine_master' %}" class="btn btn-warning w-100">Submit</button>
+    </form>
+        </div> 
+    <div class="col-md-8">
+         <h3 class="text-center">Machine List</h3>
+        <div class="table-responsive">
+         <table id="myTable" class="table data-table stripe hover nowrap align-items-center mb-0 display">
+         <thead>
+        <tr>
+          <th class="text-uppercase text-secondary  font-weight-bolder opacity-7">Id</th>
+          <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">Machine No</th>
+          <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">Machine Serial No</th>
+          <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">Device Model</th>
+          <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">Name</th>
+          <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">Response</th>
+          <th class="text-secondary opacity-7">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+           {% for data in machine_list %}
+        <tr>
+          <td>
+            <div class="d-flex px-2 py-1">
+              <div>
+                
+              </div>
+              <div class="d-flex flex-column justify-content-center">
+                <h6 class="mb-0 text-xs">{{ data.counter }}</h6>
+                
+              </div>
+            </div>
+          </td>
+          <td>
+            <p class="text-xs font-weight-bold mb-0">{{ data.machine.machineno }}</p>
+          
+          </td>
+           <td>
+            <p class="text-xs font-weight-bold mb-0">{{ data.machine.SRNO }}</p>
+          
+          </td>
+           <td>
+            <p class="text-xs font-weight-bold mb-0">{{ data.machine.devicemodel }}</p>
+          
+          </td>
+           <td>
+            <p class="text-xs font-weight-bold mb-0">{{ data.machine.Name }}</p>
+          
+          </td>
+           <td>
+            <p class="text-xs font-weight-bold mb-0">{{ data.machine.Response }}</p>
+          
+          </td>
+          
+          
+          <td class="align-middle">
+           <a href="{% url 'edit_machine' data.machine.id %}" class="btn btn-sm btn-success" data-toggle="tooltip" data-original-title="Edit user">
+             <span class="material-icons opacity-6 me-2 text-md">
+save
+</span>
+            </a>
+            <a class="btn btn-sm btn-danger" href="{% url 'delete_machine' data.machine.id %}">
+            <span class="material-icons opacity-6 me-2 text-md">
+delete
+</span></a>
+          </td>
+        </tr>
+          {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  
+   
+    
+      
+    </div>
+  </div>
+</section>
+</div>
+{% endblock content %}
+{% block javascripts %}
+<!--  Plugin for TypedJS, full documentation here: https://github.com/inorganik/CountUp.js -->
+<script src="{% static 'js/plugins/countup.min.js' %}"></script>
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script src="{% static 'js/plugins/prism.min.js' %}"></script>
+<script src="{% static 'js/plugins/highlight.min.js' %}"></script>
+<!--  Plugin for Parallax, full documentation here: https://github.com/dixonandmoe/rellax -->
+<script src="{% static 'js/plugins/rellax.min.js' %}"></script>
+<!--  Plugin for TiltJS, full documentation here: https://gijsroge.github.io/tilt.js/ -->
+<script src="{% static 'js/plugins/tilt.min.js' %}"></script>
+<!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script type="text/javascript">
+   $(document).ready(function(e) {
+        var table=$('.data-table').DataTable({
+            scrollCollapse: true,
+            autoWidth: false,
+            responsive: true,
+            dom: 'Bfrtip',
+               buttons: [
+                {
+                    extend: 'collection',
+                    className: 'btn btn-warning',
+                    buttons: [
+                {
+                    extend: 'pdf',
+                    className: 'btn btn-danger',
+                    text: 'PDF'
+                },
+                {
+                    extend: 'csv',
+                    className: 'btn btn-success',
+                    text: 'CSV'
+                },
+                {
+                    extend: 'excel',
+                    className: 'btn btn-info',
+                    text: 'Excel'
+                }
+            ]
+                }
+            ],
+            columnDefs: [{
+                targets: "datatable-nosort",
+                orderable: false,
+            }],
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "language": {
+                "info": "_START_-_END_ of _TOTAL_ entries",
+                searchPlaceholder: "Search"
+            },
+        });
+        new $.fn.dataTable.FixedHeader( table );
+         
+        $('body').one('click','.delete',function(){
+            var id = $(this).data('value');
+            var prompt = confirm("Are you Sure you want to delete?");
+            if(prompt){
+                
+                $.ajax({
+                    url:"<?php echo base_url('admin/service/delete_service')?>",
+                    method:"POST",
+                    data:{id:id},
+                    success:function(data){
+                        if(data == 1){
+                             swal("Deleted !", "You clicked the button!", "success");
+                        }
+                        else{
+                            swal("Oops!", "Something Error!", "error");
+                        }
+                        
+                        
+                    }
+                });
+            }
+        });
+        
+    });
+</script>
+{% endblock javascripts %}
