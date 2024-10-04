@@ -575,22 +575,30 @@ def enroll_mast(request):
             # Check if DepartId is '1' (or any specific condition)
             if DepartId == '5':
                 enrollid = request.POST.get('enrollid')  # Get enrollid instead of from/to
-                enrollmast = EnrollMast(enrollid=enrollid, department=department)
-                enrollmast.save()
+                if not EnrollMast.objects.filter(enrollid=enrollid).exists():
+                    enrollmast = EnrollMast(enrollid=enrollid, department=department)
+                    enrollmast.save()
+                    messages.success(request, 'Success Enrollid Entry')
+                else:
+                    messages.error(request, 'Duplicate Enrollid Entry')
             else:
                 from_status = int(request.POST.get('froms'))
                 to_status = int(request.POST.get('to'))
-
-                # Create EnrollMast objects within the range
-                for i in range(from_status, to_status + 1):
-                    enrollmast = EnrollMast(enrollid=i, department=department)
-                    enrollmast.save()
+                if not EnrollMast.objects.filter(enrollid=from_status).exists():
+                    # Create EnrollMast objects within the range
+                    for i in range(from_status, to_status + 1):
+                        enrollmast = EnrollMast(enrollid=i, department=department)
+                        enrollmast.save()
+                        messages.success(request, 'Success Enrollid Entry')
+                else:
+                    messages.error(request, 'Duplicate data provided')
 
             return redirect('enroll_mast')
 
         except (ValueError, TypeError, DepartMast.DoesNotExist):
             # Handle errors
             context = {'error': 'Invalid data provided'}
+            messages.error(request, 'Invalid data provided')
             return render(request, 'pages/enroll_mast.html', context)
 
     # Fetch all departments and enrollments

@@ -17,7 +17,28 @@
 {% block content %}
 
 </div></div></div>
-
+{% if messages %}
+  {% for message in messages %}
+  {% if message.tags == 'success' %}
+    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert" style="margin-bottom: 35px;">
+         <span class="alert-icon text-white"><i class="ni ni-like-2"></i></span>
+        <span class="alert-text text-white"><strong>Success!</strong>{{ message }}</span>
+     
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    {% else %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin-bottom: 35px;">
+    <span class="alert-icon text-white"><i class="ni ni-like-2"></i></span>
+    <span class="alert-text text-white"><strong>Error!</strong> {{ message }}</span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endif %}
+  {% endfor %}
+{% endif %}
 <div class="card card-body blur shadow-blur mx-3 mx-md-4 mt-n4">
   <section class="pt-3 pb-4" id="count-stats">
   <div class="container">
