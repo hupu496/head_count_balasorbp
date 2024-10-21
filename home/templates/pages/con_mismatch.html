@@ -24,67 +24,52 @@
     <div class="row">
         
     <div class="col-md-12">
-         <h3 class="text-center">Console Mismatch List</h3>
+         <h3 class="text-center">OUT Console Mismatch List</h3>
         <div class="text-center">
            <form method="post" style="display:inline; text-align: center;">
                 {% csrf_token %}
                 {{ form.selected_date }}
-                <button type="submit" class="btn btn-sm bg-gradient-success" style="margin-top: 10px;" >OK</button>
+                <button type="submit" class="btn btn-sm bg-gradient-success" style="margin-top: 10px;" >REFRESH</button>
             </form>
         </div>
         <div class="table-responsive">
-         <table id="myTable" class="table data-table stripe hover nowrap align-items-center mb-0 display">
-         <thead>
+        <table id="myTable" class="table data-table stripe hover nowrap align-items-center mb-0 display">
+    <thead>
         <tr>
-          <th class="text-uppercase text-secondary  font-weight-bolder opacity-7">Gate</th>
-          <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">EnrollID</th>
-           <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">Name</th>
-             <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">Out Time</th>
-              <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">Previous Out Time</th>
-             <th class="text-uppercase text-secondary  font-weight-bolder opacity-7 ps-2">Action</th>
-          
-      
+            <th class="text-uppercase text-secondary font-weight-bolder opacity-7">Gate</th>
+            <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">EnrollID</th>
+            <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">Name</th>
+            <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">OUT Time</th>
+            <!-- <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">Out Time</th> -->
         </tr>
-      </thead>
-      <tbody>
-       
-            {% for data in mismatched_data %}
-        
+    </thead>
+    <tbody>
+        {% for data in gate_wise_data %}
         <tr>
-          <td>
-            <div class="d-flex px-2 py-1">
-              <div>    
-              </div>
-              <div class="d-flex flex-column justify-content-center">
-                <h6 class="mb-0 text-xs">{{ data.entry }}({{ data.response }})</h6>
-              </div>
-            </div>
-          </td>
-          <td>
-            <p class="text-xs font-weight-bold mb-0">{{ data.enrollid }}</p>
-          </td>
-          <td>
-            <p class="text-xs font-weight-bold mb-0">{{ data.name }}</p>
-          </td>
-         
-           <td>
-            <p class="text-xs font-weight-bold mb-0">{{ data.out_time }}</p>
-          </td>
-                     <td>
-            <p class="text-xs font-weight-bold mb-0">{{ data.previous_out_time }}</p>
-          </td>
-          <td> 
-                  <button type="button" class="btn btn-block bg-gradient-warning mb-3" data-bs-toggle="modal" data-bs-target="#modal-notification" data-enrollid="{{ data.enrollid }}" data-gate="{{ data.entry }}" data-response="{{ data.response }}" data-out_time="{{ data.previous_out_time }}">Update</button>
-
-          </td>
-        
+            <td>
+                <div class="d-flex px-2 py-1">
+                    <div></div>
+                    <div class="d-flex flex-column justify-content-center">
+                        <h6 class="mb-0 text-xs">{{ data.gate_name }}</h6>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <p class="text-xs font-weight-bold mb-0">{{ data.enrollid }}</p>
+            </td>
+            <td>
+                <p class="text-xs font-weight-bold mb-0">{{ data.name }}</p>
+            </td>
+            <td>
+                <p class="text-xs font-weight-bold mb-0">{{ data.in_time }}</p>
+            </td>
+           <!--  <td>
+                <p class="text-xs font-weight-bold mb-0">{{ data.out_time }}</p>
+            </td> -->
         </tr>
         {% endfor %}
-      </tbody>
-
-    </table>
-
-
+    </tbody>
+</table>
   </div>
 
   
@@ -134,24 +119,24 @@
 <!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
 <script src="{% static 'js/plugins/choices.min.js' %}"></script>
 <script type="text/javascript">
-     document.addEventListener('DOMContentLoaded', function () {
-    const modal = document.getElementById('modal-notification');
-    modal.addEventListener('show.bs.modal', function (event) {
-      const button = event.relatedTarget;
-      const enrollid = button.getAttribute('data-enrollid');
-      const gate = button.getAttribute('data-gate');
-      const response = button.getAttribute('data-response');
-      const out_time = button.getAttribute('data-out_time');
-      const modalEnrollid = modal.querySelector('#modal-enrollid');
-      const modalGate = modal.querySelector('#modal-gate');
-      const modalResponse = modal.querySelector('#modal-response');
-      const modalInTime = modal.querySelector('#modal-in_time');
-      modalEnrollid.value = enrollid;
-      modalGate.value = gate;
-      modalResponse.value = response;
-      modalInTime.value = out_time;  // Initialize the IN time to the previous out time
-    });
-  });
+  //    document.addEventListener('DOMContentLoaded', function () {
+  //   const modal = document.getElementById('modal-notification');
+  //   modal.addEventListener('show.bs.modal', function (event) {
+  //     const button = event.relatedTarget;
+  //     const enrollid = button.getAttribute('data-enrollid');
+  //     const gate = button.getAttribute('data-gate');
+  //     const response = button.getAttribute('data-response');
+  //     const out_time = button.getAttribute('data-out_time');
+  //     const modalEnrollid = modal.querySelector('#modal-enrollid');
+  //     const modalGate = modal.querySelector('#modal-gate');
+  //     const modalResponse = modal.querySelector('#modal-response');
+  //     const modalInTime = modal.querySelector('#modal-in_time');
+  //     modalEnrollid.value = enrollid;
+  //     modalGate.value = gate;
+  //     modalResponse.value = response;
+  //     modalInTime.value = out_time;  // Initialize the IN time to the previous out time
+  //   });
+  // });
    $(document).ready(function(e) {
         var table=$('.data-table').DataTable({
             scrollCollapse: true,

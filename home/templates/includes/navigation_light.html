@@ -20,52 +20,44 @@
       <ul class="navbar-nav navbar-nav-hover ms-lg-12 ps-lg-5 w-100">
         <li class=" p-1 nav-item dropdown dropdown-hover ms-lg-auto my-auto ms-3 ms-lg-0">
           <a class="nav-link ps-2 d-flex cursor-pointer align-items-center" id="dropdownMenuPages" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="material-icons opacity-6 me-2 text-md">dashboard</i>
+           
             Add Master
            
           </a>
           <div class="dropdown-menu dropdown-menu-animation ms-n3 dropdown-md p-3 border-radius-lg mt-0 mt-lg-3" aria-labelledby="dropdownMenuPages">
             <div class="d-none d-lg-block">
               <a href="{% url 'comp_master' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
-   <span class="material-icons opacity-6 me-2 text-md">
-home
-</span>
+
   Company Master
   </a>
    <a href="{% url 'machine_master' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
-   <span class="material-icons opacity-6 me-2 text-md">
-videogame_asset
-</span>
+
 
   Machine Master
   </a>
   <a href="{% url 'depart_master' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
-   <span class="material-icons opacity-6 me-2 text-md">
-shop_2
-</span>
+  
   Department Master
   </a>
   <a href="{% url 'des_master' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
-    <span class="material-icons opacity-6 me-2 text-md">
-assignment_ind
-</span>
+  
  Designation Master
   </a>
   <a href="{% url 'enroll_mast' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
-     <span class="material-icons opacity-6 me-2 text-md">manage_accounts</span>
+   
    EnrollID Master
   </a>
    <a href="{% url 'emp_master' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
-     <span class="material-icons opacity-6 me-2 text-md">manage_accounts</span>
+  
    Employee Master
   </a>
-    <!--  <a href="{% url 'con_mismatch' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
-     <span class="material-icons opacity-6 me-2 text-md">block</span>
+   <a href="{% url 'in_console' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
+    
+  IN Console Mismatch
+  </a>
+  <a href="{% url 'con_mismatch' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
+    
   OUT Console Mismatch
-  </a> -->
-  <a href="{% url 'in_console' %}" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
-     <span class="material-icons opacity-6 me-2 text-md">block</span>
-  Console Mismatch
   </a>
   
   
@@ -84,7 +76,7 @@ assignment_ind
      
         <li class=" p-1 nav-item dropdown dropdown-hover ms-lg-auto my-auto ms-3 ms-lg-0">
           <a class="nav-link ps-2 d-flex cursor-pointer align-items-center" href="{% url 'logout' %}">
-            <i class="material-icons opacity-6 me-2 text-md">person_pin</i>
+           
            Logout
            
           </a>

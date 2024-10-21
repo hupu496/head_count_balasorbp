@@ -24,7 +24,7 @@
     <div class="row">
         
     <div class="col-md-12">
-         <h3 class="text-center">Console Mismatch List</h3>
+         <h3 class="text-center">IN Mismatch List</h3>
         <div class="text-center">
            <form method="post" style="display:inline; text-align: center;">
                 {% csrf_token %}
@@ -40,7 +40,7 @@
             <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">EnrollID</th>
             <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">Name</th>
             <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">In Time</th>
-            <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">Out Time</th>
+            <!-- <th class="text-uppercase text-secondary font-weight-bolder opacity-7 ps-2">Out Time</th> -->
         </tr>
     </thead>
     <tbody>
@@ -63,9 +63,9 @@
             <td>
                 <p class="text-xs font-weight-bold mb-0">{{ data.in_time }}</p>
             </td>
-            <td>
+           <!--  <td>
                 <p class="text-xs font-weight-bold mb-0">{{ data.out_time }}</p>
-            </td>
+            </td> -->
         </tr>
         {% endfor %}
     </tbody>
