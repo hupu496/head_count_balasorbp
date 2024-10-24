@@ -34,7 +34,7 @@ class DateForm(forms.Form):
     selected_date = forms.DateField(
         initial=datetime.date.today,widget=forms.DateInput(attrs={
             'type': 'date',
-            'style': 'height: 35px; font-size: 20px; padding: 5px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 25px;'
+            'style': 'height: 35px; font-size: 20px; padding: 5px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 40px; margin-top:-10px;'
         })
     )
 

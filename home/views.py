@@ -20,8 +20,6 @@ from django.db.models import Max
 # from celery import shared_task
 from datetime import timedelta
 
-
-
 def home(request):
     if request.session.get('login', None):
         return redirect('dashboard')
@@ -404,6 +402,7 @@ def live_data(request):
         'non_hazard_in': non_hazard_in,
         'non_hazard_out': non_hazard_out,
         'non_hazard_total': total_non_hazard_head_count,
+        'data': data,
 
     })
 
