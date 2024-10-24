@@ -508,49 +508,48 @@ def list(request, lists):
                 })
         
         elif lists == 'MAIN GATE TOTAL HEAD COUNT':
-            srnosfind = MachineMast.objects.filter(machineno__in=['2', '6']).values_list('SRNO', flat=True)
-            if machine.machineno in ['1', '5']:  # Machines for "IN"
-                if live.EnrollID in min_ids:
-                    # Get the corresponding OUT record using the SRNOs from machines 2 and 6
-                    out_record = livedata.filter(EnrollID=live.EnrollID, SRNO__in=srnosfind).values_list('PunchDate', flat=True)
-                    # Compare punch dates of IN and OUT
-                    if out_record:
-                        formatted_dates = [dt.strftime('%Y-%m-%d %H:%M:%S%z') for dt in out_record]  # Format all dates
-                        latest_punch_date = max(out_record)  # You can still use max for comparison
-                        latest_punch_date_formatted = latest_punch_date.strftime('%Y-%m-%d %H:%M:%S%z')  # Format latest date
-                    
-                    if live.PunchDate > latest_punch_date:
-                        data.append({
-                            'monitor': live,
-                            'machine': machine,
-                            'employee': employee_info,
-                            'formatted_date': latest_punch_date_formatted  # Optional: store the formatted date
-                        })
+            if (len(min_ids) <= len(mout_ids)):
+                if machine.machineno in ['2', '6']:
+                   pass
+            else:
+                srnosfind = MachineMast.objects.filter(machineno__in=['2', '6']).values_list('SRNO', flat=True)
+                if machine.machineno in ['1', '5']:  
+                    data = []  # To store the results
+                    processed_mout_ids = mout_ids.copy()  # Create a copy of gout_ids to track the remaining pairs
+
+                    for min_id in min_ids:  # Loop through all gin_ids, even duplicates
+                        if min_id in processed_mout_ids:  
+                            # If gin_id has a pair in gout_ids, remove it from processed_gout_ids (treat it as "paired")
+                            processed_mout_ids.remove(min_id)
+                        else:
+                            # If gin_id doesn't have a pair, process it and append to data
+                            data.append({
+                                'monitor': live,  # Assuming `live` contains relevant info for the current gin_id
+                                'machine': machine,
+                                'employee': employee_info
+                            })
                     
         elif lists == 'GATE3 TOTAL HEAD COUNT':
-            srnosfind = MachineMast.objects.filter(machineno__in=['4', '8']).values_list('SRNO', flat=True)
-            if machine.machineno in ['3', '7']:  # Machines for "IN"
-                if live.EnrollID in min_ids:
-                   
-                    # Get the corresponding OUT record using the SRNOs from machines 2 and 6
-                    out_record = livedata.filter(EnrollID=live.EnrollID, SRNO__in=srnosfind).values_list('PunchDate', flat=True)
-                    # Compare punch dates of IN and OUT
-                    if out_record:
-                        formatted_dates = [dt.strftime('%Y-%m-%d %H:%M:%S%z') for dt in out_record]  # Format all dates
-                        latest_punch_date = max(out_record)  # You can still use max for comparison
-                        latest_punch_date_formatted = latest_punch_date.strftime('%Y-%m-%d %H:%M:%S%z')  # Format latest date
-                       
-                        # Example comparison if you want to check against live.PunchDate
-                        if live.PunchDate > latest_punch_date:
+            if (len(gin_ids) <= len(gout_ids)):
+                if machine.machineno in ['4', '8']:
+                   pass
+            else:
+                srnosfind = MachineMast.objects.filter(machineno__in=['4', '8']).values_list('SRNO', flat=True)
+                if machine.machineno in ['3', '7']:
+                    data = []  # To store the results
+                    processed_gout_ids = gout_ids.copy()  # Create a copy of gout_ids to track the remaining pairs
+
+                    for gin_id in gin_ids:  # Loop through all gin_ids, even duplicates
+                        if gin_id in processed_gout_ids:  
+                            # If gin_id has a pair in gout_ids, remove it from processed_gout_ids (treat it as "paired")
+                            processed_gout_ids.remove(gin_id)
+                        else:
+                            # If gin_id doesn't have a pair, process it and append to data
                             data.append({
-                                'monitor': live,
+                                'monitor': live,  # Assuming `live` contains relevant info for the current gin_id
                                 'machine': machine,
-                                'employee': employee_info,
-                                'formatted_date': latest_punch_date_formatted  # Optional: store the formatted date
+                                'employee': employee_info
                             })
-                    else:
-                        # Handle case where out_record is empty
-                        pass
         elif lists == 'GATE3 IN':
             if (len(gin_ids) <= len(gout_ids)):
                 if machine.machineno in ['4', '8']:
