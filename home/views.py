@@ -123,9 +123,8 @@ def home(request):
                 hazard_in_count += 1
             elif machine.machineno in ['4', '8']:  # Hazard Out
                 hazard_out_count += 1
-         #out console entry 
         if live.EnrollID:  # out console auto entry 
-            if machine.machineno in ['1','5','3','7']:
+            if machine.machineno in ['1','5']:
                 # Fetch the SRNO for the previous machine number (if needed)
                 current_Srno = MachineMast.objects.filter(machineno=machine.machineno).values_list('SRNO', flat=True).first()
                 # Fetch the last two records for the given SRNO and EnrollID
@@ -136,7 +135,40 @@ def home(request):
                     # Check if the last two entries are identical (based on relevant fields)
                     if last_entry == second_last_entry:
                         previous_machineno = MachineMast.objects.filter(SRNO=second_last_entry.SRNO).values_list('machineno',flat=True).first()
-                        previous_machineno = previous_machineno-1;
+                        previous_machineno = previous_machineno+1;
+                        previous_srnos = MachineMast.objects.filter(machineno=previous_machineno).values_list('SRNO',flat=True).first()
+                        adjusted_punchtime = second_last_entry.PunchDate + timedelta(seconds=30)
+                        exists = MonitorData.objects.filter(
+                            EnrollID=live.EnrollID,
+                            PunchDate=adjusted_punchtime,
+                            SRNO=previous_srnos,
+                            Errorstatus=2
+                            ).exists()
+                        if not exists:
+                            # Get the last id to avoid conflicts
+                            last_id = MonitorData.objects.aggregate(max_id=models.Max('id'))['max_id']
+                            new_id = (last_id or 0) + 1
+                            # Insert the new record into MonitorData
+                            MonitorData.objects.create(
+                                id=new_id,
+                                EnrollID=live.EnrollID,
+                                PunchDate=adjusted_punchtime,
+                                SRNO=previous_srno,
+                                Errorstatus=2  # Mark it as error status
+                            )
+        if live.EnrollID:  # out console auto entry 
+            if machine.machineno in ['3','7']:
+                # Fetch the SRNO for the previous machine number (if needed)
+                current_Srno = MachineMast.objects.filter(machineno=machine.machineno).values_list('SRNO', flat=True).first()
+                # Fetch the last two records for the given SRNO and EnrollID
+                last_two_entries = MonitorData.objects.filter(SRNO=current_Srno, EnrollID=live.EnrollID).order_by('-PunchDate')[:2]
+                if len(last_two_entries) == 2:
+                    last_entry = last_two_entries[0]
+                    second_last_entry = last_two_entries[1]
+                    # Check if the last two entries are identical (based on relevant fields)
+                    if last_entry == second_last_entry:
+                        previous_machineno = MachineMast.objects.filter(SRNO=second_last_entry.SRNO).values_list('machineno',flat=True).first()
+                        previous_machineno = previous_machineno+1;
                         previous_srnos = MachineMast.objects.filter(machineno=previous_machineno).values_list('SRNO',flat=True).first()
                         adjusted_punchtime = second_last_entry.PunchDate + timedelta(seconds=30)
                         exists = MonitorData.objects.filter(
@@ -158,6 +190,7 @@ def home(request):
                                 Errorstatus=2  # Mark it as error status
                             )
 
+
         # Check if EnrollID exists and update total counts accordingly
         if live.EnrollID:
             # Non-hazard total logic
@@ -171,8 +204,6 @@ def home(request):
                 hazard_total += 1
             elif machine.machineno in ['4', '8']:
                 hazard_total -= 1  # Exit means decrease from total
-
-
             # If the EnrollID is in an "out" machine, check for the last entry
         if non_hazard_in < non_hazard_out:
             # Get the last "out" machine number and find the corresponding "in" machine
