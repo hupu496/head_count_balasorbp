@@ -81,7 +81,7 @@ def home(request):
             else:
                 print(f"Duplicate data detected, not creating a new entry for EnrollID: {data_dict['EnrollID']}")
 
-    livedata = MonitorData.objects.filter(PunchDate__date=request.session['selected_date']).order_by('-id')[:10]
+    livedata = MonitorData.objects.filter(PunchDate__date=request.session['selected_date']).order_by('-id')[:13]
     srnos = livedata.values_list('SRNO', flat=True)
     enrollids = livedata.values_list('EnrollID', flat=True)
 
@@ -309,12 +309,17 @@ def home(request):
     }
     return render(request, 'pages/index1.html', context)
 def live_data(request):
-    if request.session.get('login', None):
-        return redirect('dashboard')
+        # Check if user is logged in
+    if not request.session.get('login'):
+        return JsonResponse({'error': 'Not logged in'}, status=403)
+    
     today = timezone.now().date()
     form = DateForm(request.POST or None)
     selected_date = today
+    form_valid = False
+
     if form.is_valid():
+        form_valid = True
         selected_date = form.cleaned_data['selected_date']
         previous_date = form.cleaned_data['selected_date']
         request.session['previous_date'] = previous_date.strftime("%Y-%m-%d")
@@ -366,7 +371,7 @@ def live_data(request):
             )
                
 
-    livedata = MonitorData.objects.filter(PunchDate__date=request.session['selected_date']).order_by('-id')[:10]
+    livedata = MonitorData.objects.filter(PunchDate__date=request.session['selected_date']).order_by('-id')[:13]
     srnos = livedata.values_list('SRNO', flat=True)
     enrollids = livedata.values_list('EnrollID', flat=True)
 
@@ -425,17 +430,18 @@ def live_data(request):
     total_hazard_head_count = hazard_in_count - hazard_out_count
     total_wagen_head_count = wagen_in_count - wagen_out_count
     total_tank_head_count = tank_in_count - tank_out_count
-    return JsonResponse({
+    data = {
+
+        'form_valid': form_valid,
         'hazard_in_count': hazard_in_count,
         'hazard_out_count': hazard_out_count,
-        'hazard_total': total_hazard_head_count,
-
+        'hazard_total': hazard_total,
         'non_hazard_in': non_hazard_in,
         'non_hazard_out': non_hazard_out,
-        'non_hazard_total': total_non_hazard_head_count,
+        'non_hazard_total': non_hazard_total,
         'data': data,
-
-    })
+    }
+    return JsonResponse(data)
 
 def login_view(request):
     if request.method == 'POST':
@@ -1045,21 +1051,23 @@ def category(request):
         
     }
 
-    in_ids = set()
-    out_ids = set()
+    min_ids = []
+    mout_ids = []
+    gin_ids = []
+    gout_ids = []
 
     # Identify IN and OUT ids based on machine number
     for live in livedata:
         machine = machine_dict.get(live.SRNO)
         if machine:
             if machine.machineno in ['1', '5']:
-                in_ids.add(live.EnrollID)
+                min_ids.add(live.EnrollID)
             elif machine.machineno in ['2', '6']:
-                out_ids.add(live.EnrollID)
+                mout_ids.add(live.EnrollID)
             elif machine.machineno in ['3', '7']:
-                in_ids.add(live.EnrollID)
+                gin_ids.add(live.EnrollID)
             elif machine.machineno in ['4', '8']:
-                out_ids.add(live.EnrollID)
+                gout_ids.add(live.EnrollID)
 
     # Populate gate-specific data
     for live in livedata:
@@ -1075,15 +1083,11 @@ def category(request):
             'department': employeedata.department.DepartName if employeedata else None
         }
        
-        if machine.machineno in ['1', '5'] and live.EnrollID in in_ids and live.EnrollID not in out_ids:
+        if machine.machineno in ['1', '5'] and live.EnrollID in min_ids and live.EnrollID not in mout_ids:
             gate_data['main_gate'].append({'monitor': live, 'machine': machine, 'employee': employee_info})
-        elif machine.machineno in ['3', '7'] and live.EnrollID in in_ids and live.EnrollID not in out_ids:
+        elif machine.machineno in ['3', '7'] and live.EnrollID in gin_ids and live.EnrollID not in gout_ids:
             gate_data['gate3'].append({'monitor': live, 'machine': machine, 'employee': employee_info})
-    print(gate_data)
-        # print('gate_data', len(gate_data['main_gate']))
-        # print('hazardous_gate', len(gate_data['hazardous_gate']))  
-        # print('wagen_gate', len(gate_data['wagen_gate']))
-        # print('tank_farm', (gate_data['tank_farm']))  
+   
     # Prepare the context with department-wise data
     context = {
         'data': gate_data,

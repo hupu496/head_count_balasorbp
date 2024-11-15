@@ -3,5 +3,5 @@ from home.models import MonitorData, MachineMast, CompanyMast, DepartMast, DesMa
 
 
 admin.site.register(EnrollMast)
-# admin.site.register(EmpMast)
+admin.site.register(EmpMast)
 # Register your models here.

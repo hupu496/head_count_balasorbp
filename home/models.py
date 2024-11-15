@@ -32,7 +32,7 @@ class EmpMast(models.Model):
     CatName = models.TextField(null=True, blank=True)
     STATUS_E = models.CharField(max_length=50, null=True, blank=True)
     def __str__(self):
-        return str(self.ids)
+        return str(self.empcode)
 
 class MonitorData(models.Model):
     id = models.BigIntegerField(primary_key=True)
