@@ -54,59 +54,59 @@ display: block;
 {% block content %}
  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript">
-    $(document).ready(function() {
-        // Start the AJAX interval only if form is not valid
-        {% if not form_valid %}
-        var ajaxInterval = setInterval(function() {
-            $.ajax({
-                url: "{% url 'live_data' %}",
-                type: 'GET',
-                dataType: 'json',  // Expect JSON data in response
-                success: function(data) {
-                    // Check if there is an error in the response
-                    if (data.error) {
-                        console.log(data.error);
-                        return;
-                    }
-                    
-                    // Update the counts
-                    $('#hazard-in').text(data.hazard_in_count);
-                    $('#hazard-out').text(data.hazard_out_count);
-                    $('#hazard-total').text(data.hazard_total);
-                    $('#non-hazard-in').text(data.non_hazard_in);
-                    $('#non-hazard-out').text(data.non_hazard_out);
-                    $('#non-hazard-total').text(data.non_hazard_total);
+   $(document).ready(function () {
+    var ajaxInterval;
 
-                    // Dynamically generate and update live employee and machine data
-                    var liveDataHtml = '';
-                    $.each(data.data, function(index, item) {
-                        var colorStyle = '';
-                        if (item.machine.machineno == '1' || item.machine.machineno == '5') {
-                            colorStyle = 'background-color:#4CAF50; color: white;';
-                        } else if (item.machine.machineno == '3' || item.machine.machineno == '7') {
-                            colorStyle = 'background-color:#F44335; color: white;';
-                        } 
-                        liveDataHtml += '<h6 style="' + colorStyle + ' padding: 5px; border-radius: 5px;">' +
-                            item.employee.empcode + '&nbsp;' + item.employee.Name + '&nbsp;&nbsp;&nbsp;&nbsp;' +
-                            item.machine.Name + ' ' + item.machine.Response + '</h6>';
-                    });
-
-                    $('#live-data-container').html(liveDataHtml);
-                    console.log(liveDataHtml);
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error occurred:', error);
-
+    {% if not form_valid or is_today %}
+    ajaxInterval = setInterval(function () {
+        $.ajax({
+            url: "{% url 'live_data' %}",
+            type: 'GET',
+            success: function (data) {
+               console.log(data);
+                if (!data || data.error) {
+                    console.log(data.error || 'No data received');
+                    return;
                 }
-            });
-        }, 5000);  // Repeat every 5 seconds
-        {% else %}
-        // If form is valid, clear the interval to stop AJAX updates
-        if (typeof ajaxInterval !== 'undefined') {
-            clearInterval(ajaxInterval);
-        }
-        {% endif %}
-    });
+
+                // Update counts
+                $('#hazard-in').text(data.hazard_in_count);
+                $('#hazard-out').text(data.hazard_out_count);
+                $('#hazard-total').text(data.hazard_total);
+                $('#non-hazard-in').text(data.non_hazard_in);
+                $('#non-hazard-out').text(data.non_hazard_out);
+                $('#non-hazard-total').text(data.non_hazard_total);
+
+                // Update live data
+                var liveDataHtml = '';
+                data.live_data.forEach(function (item) {
+                    var machine = item.machine || {};
+                    var employee = item.employee || {};
+                    var colorStyle = '';
+
+                    if (machine.machineno === '1' || machine.machineno === '5') {
+                        colorStyle = 'background-color:#4CAF50; color: white;';
+                    } else if (machine.machineno === '3' || machine.machineno === '7') {
+                        colorStyle = 'background-color:#F44335; color: white;';
+                    }
+
+                    liveDataHtml += `
+                        <h6 style="${colorStyle} padding: 5px; border-radius: 5px;">
+                            ${employee.empcode || 'N/A'} &nbsp; ${employee.Name || 'N/A'} 
+                            &nbsp;&nbsp;&nbsp;&nbsp; ${machine.Name || 'N/A'} ${machine.Response || ''}
+                        </h6>`;
+                });
+
+                $('#live-data-container').html(liveDataHtml);
+            },
+            error: function (xhr, status, error) {
+                console.error('Error occurred:', error);
+            },
+        });
+    }, 5000);
+    {% endif %}
+});
+
 </script>
 </div></div></div>
 {% load static %}
@@ -147,7 +147,7 @@ display: block;
                            <h1 class="text-gradient text-primary" style="
     font-size: 69px;"><i class="fas fa-users"></i></h1>
                            <h5 class="mt-3" style="font-size: 30px;">TOTAL HEAD COUNT</h5>
-                           <a href="list/MAIN GATE TOTAL HEAD COUNT" target="_blank" class="btn btn-icon btn-2 bg-gradient-success" style="width: 145px;height: 60px;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);">
+                           <a href="list/MAIN GATE TOTAL HEAD COUNT" target="_blank" class="btn btn-icon btn-2 bg-gradient-success" style="width: 145px;margin-top:13px;height: 60px;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);">
                            <b style="font-size: 30px;" id="non-hazard-total">{{ non_hazard_total }}</b>
                            </a>
                         </div>
@@ -233,7 +233,7 @@ display: block;
 </section>
          </div>
          <div class="col-md-3 col-12">
-             <img src="{% static 'img/notification.png' %}" width="30%" style="margin-top:-105px; margin-left: 100px; text-align: center;">
+             <img src="{% static 'img/notification.png' %}" width="30%" style="margin-top:-148px; margin-left: 100px; text-align: center;">
                 <div id="live-data-container" style="height: 700px;">
         {% for item in data %}
             {% if item.machine.machineno == '1' or item.machine.machineno == '5' %}

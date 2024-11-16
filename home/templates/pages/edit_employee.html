@@ -26,49 +26,20 @@
           <form method="POST">
             {% csrf_token %}
                 <h3 class="text-center">Edit Employee</h3>
-            <!--       <b>Edit EnrollID</b>
-                    <div class="input-group input-group-outline is-valid my-3">
-                                <select name="enrollid" id="id_department" class="form-control">
-                                 
-                                    {% for enroll in enrollids %}
-                                        <option value="{{ enroll.id }}" {% if enroll == form.instance.enrollid %}selected{% endif %}>{{ enroll.enrollid }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div> -->
+           
                              <b>Edit Empcode</b>
                            <div class="input-group input-group-outline is-valid my-3">
                               <input type="text" name="empcode"  class="form-control" value="{{ form.instance.empcode }}">
                            </div>
                       <b>Edit Name</b>
                            <div class="input-group input-group-outline is-valid my-3">
-                              <input type="text" name="Name" id="id_Designation" class="form-control" value="{{ form.instance.Name }}">
+                             <input type="text" name="Name" id="id_Name" class="form-control" value="{{ form.instance.Name }}">
+
                            </div>
-                <b>Edit Department</b>
-                           <div class="input-group input-group-outline  my-3">
-       <!--  <label class="form-label">Deparment</label> -->
-      <select name="department" class="form-control" id="department-select">
-        <option>Select Department</option>
-        {% for data in departlist %}
-         <option value="{{ data.DepartId }}" {% if DepartId == form.instance.DepartId %}selected{% endif %}>{{ data.DepartName }}</option>
-        
-          {% endfor %}
-        </select>
-        </div>
-          <b>Edit Designation</b>
-         <div class="input-group input-group-outline  my-3">
-       <!--  <label class="form-label">Designation</label> -->
-      <select name="designation" class="form-control" id="designation-select">
-        {% for designation in designationlist %}
-        {% if designation.Desgid == form.instance.designation.Desgid %}
-                <option value="{{ designation.Desgid }}" {% if designation.Desgid == form.instance.designation.Desgid %}selected{% endif %}>{{ designation.Designation }}</option>
-                {% endif %}
-            {% endfor %}
-         
-        </select>
-        </div>
+              
        
            
-    <button href="{% url 'des_master' %}" class="btn btn-warning w-100">Submit</button>
+    <button href="{% url 'emp_master' %}" class="btn btn-warning w-100">Submit</button>
     </form>
         </div> 
     </div>

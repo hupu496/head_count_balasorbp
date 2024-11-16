@@ -23,21 +23,23 @@ from datetime import timedelta
 def home(request):
     if request.session.get('login', None):
         return redirect('dashboard')
+
     today = timezone.now().date()
     form = DateForm(request.POST or None)
     selected_date = today
-    form_valid = False  
+    is_today = True  # Track if the selected date is today
+    form_valid = False
+
     if form.is_valid():
         form_valid = True
         selected_date = form.cleaned_data['selected_date']
-        previous_date = form.cleaned_data['selected_date']
-        request.session['previous_date'] = previous_date.strftime("%Y-%m-%d")
+        request.session['selected_date'] = selected_date.strftime("%Y-%m-%d")
+        is_today = (selected_date == today)
     else:
-        selected_date = today
-    request.session['selected_date'] = selected_date.strftime("%Y-%m-%d")
+        request.session['selected_date'] = today.strftime("%Y-%m-%d")
     with pyodbc.connect(
         'Driver={SQL Server};'
-        'Server=DESKTOP-FEURJVI;'
+        'Server=DESKTOP-5N7IKQ6;'
         'Database=DATAIOCL;'
         'Trusted_Connection=yes;'
     ) as conn:
@@ -296,6 +298,7 @@ def home(request):
     context = {
         'form': form,
         'data': data,
+        'is_today': is_today,
         'form_valid': form_valid,
         'selected_date': selected_date,
         'hazard_in_count': hazard_in_count,
@@ -309,139 +312,103 @@ def home(request):
     }
     return render(request, 'pages/index1.html', context)
 def live_data(request):
-        # Check if user is logged in
-    if not request.session.get('login'):
-        return JsonResponse({'error': 'Not logged in'}, status=403)
+    if request.session.get('login', None):
+        return redirect('dashboard')
     
     today = timezone.now().date()
-    form = DateForm(request.POST or None)
-    selected_date = today
-    form_valid = False
+    selected_date = request.session.get('selected_date', today.strftime("%Y-%m-%d"))
+    selected_date = timezone.datetime.strptime(selected_date, "%Y-%m-%d").date()
 
-    if form.is_valid():
-        form_valid = True
-        selected_date = form.cleaned_data['selected_date']
-        previous_date = form.cleaned_data['selected_date']
-        request.session['previous_date'] = previous_date.strftime("%Y-%m-%d")
-    else:
-        selected_date = today
-    request.session['selected_date'] = selected_date.strftime("%Y-%m-%d")
     with pyodbc.connect(
         'Driver={SQL Server};'
-        'Server=DESKTOP-FEURJVI;'
+        'Server=DESKTOP-5N7IKQ6;'
         'Database=DATAIOCL;'
         'Trusted_Connection=yes;'
     ) as conn:
         cursor = conn.cursor()
         query = "SELECT * FROM MonitorDataTbl WHERE CAST(PunchDate AS DATE) = ?"
-        punch_datetime = selected_date.strftime('%Y-%m-%d')
-
-        cursor.execute(query, punch_datetime)
+        cursor.execute(query, selected_date.strftime('%Y-%m-%d'))
         rows = cursor.fetchall()
         
+        # Process rows and save to MonitorData model
         for row in rows:
             data_dict = {
                 'SRNO': row[0],
                 'EnrollID': row[1],
-                'PunchDate': row[2].strftime("%Y-%m-%d %H:%M:%S"),  # Include time in format to ensure precision
+                'PunchDate': row[2].strftime("%Y-%m-%d %H:%M:%S"),
                 'TRID': row[3],
                 'id': row[4],
                 'SEND_SERVER': row[5],
                 'RESEND_SERVER': row[6],
             }
-
-            # Check if a record with the same EnrollID, PunchDate, and SRNO already exists
-            exists = MonitorData.objects.filter(
+            # Avoid duplicates
+            MonitorData.objects.get_or_create(
+                SRNO=data_dict['SRNO'],
                 EnrollID=data_dict['EnrollID'],
                 PunchDate=data_dict['PunchDate'],
-                SRNO=data_dict['SRNO']
-            ).exists()
-
-            if not exists:
-                last_id = MonitorData.objects.aggregate(max_id=models.Max('id'))['max_id']
-                new_id = (last_id or 0) + 1
-                MonitorData.objects.get_or_create(
-                    id=new_id,
-                    defaults={
-                        'SRNO': data_dict['SRNO'],
-                        'EnrollID': data_dict['EnrollID'],
-                        'PunchDate': data_dict['PunchDate'],
-                        'Errorstatus':'0'
-                    }
+                defaults={'Errorstatus': '0'}
             )
-               
 
-    livedata = MonitorData.objects.filter(PunchDate__date=request.session['selected_date']).order_by('-id')[:13]
-    srnos = livedata.values_list('SRNO', flat=True)
-    enrollids = livedata.values_list('EnrollID', flat=True)
-
-    machnes = MachineMast.objects.filter(SRNO__in=srnos)
-    enrolls = EnrollMast.objects.filter(enrollid__in=enrollids)
-    employees = EmpMast.objects.filter(enrollid__in=enrolls)
-
-    machine_dict = {machine.SRNO: machine for machine in machnes}
-    enroll_dict = {enroll.enrollid: enroll for enroll in enrolls}
-    employee_dict = {employee.enrollid_id: employee for employee in employees}
-
+    livedata = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')[:13]
     data = []
     for live in livedata:
-        machine = machine_dict.get(live.SRNO)
-        enroll = enroll_dict.get(live.EnrollID)
-        employeedata = employee_dict.get(enroll.id) if enroll else None
+        machine = MachineMast.objects.filter(SRNO=live.SRNO).first()
+        employee = None
+        enroll = None
+        if live.EnrollID:
+            enroll = EnrollMast.objects.filter(enrollid=live.EnrollID).first()
+            if enroll:
+                employee = EmpMast.objects.filter(enrollid=enroll.id).first()
+        
         data.append({
-            'monitor': live,
-            'machine': machine,
-            'employee': employeedata
+            'monitor': {
+                'SRNO': live.SRNO,
+                'EnrollID': live.EnrollID,
+                'PunchDate': live.PunchDate,
+            },
+            'machine': {
+                'machineno': machine.machineno if machine else None,
+                'Name': machine.Name if machine else None,
+                'Response': machine.Response if machine else None,
+            } if machine else None,
+            'employee': {
+                'empcode': employee.empcode if employee else None,
+                'Name': employee.Name if employee else None,
+            } if employee else None,
         })
     
-    monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
-    # Initialize all counts
-    hazard_in_count = hazard_out_count = 0
-    non_hazard_in = non_hazard_out = 0
-    wagen_in_count = wagen_out_count = 0
-    tank_in_count = tank_out_count = 0
-    non_hazard_total = hazard_total = wagen_total = tank_total = 0
-    for live in monitor_data:
-        machine = MachineMast.objects.filter(SRNO=live.SRNO).first()
-        if machine:
-            if machine.machineno in ['1', '5']:  # Non-hazard In
-                non_hazard_in += 1
-            elif machine.machineno in ['2', '6']:  # Non-hazard Out
-                non_hazard_out += 1
-            elif machine.machineno in ['3', '7']:  # Hazard In
-                hazard_in_count += 1
-            elif machine.machineno in ['4', '8']:  # Hazard Out
-                hazard_out_count += 1
-        # Check if EnrollID exists and update total counts accordingly
-        if live.EnrollID:
-            # Non-hazard total logic
-            if machine.machineno in ['1', '5']:
-                non_hazard_total += 1
-            elif machine.machineno in ['2', '6']:
-                non_hazard_total -= 1  # Exit means decrease from total
+    # Count hazards and non-hazards
+    hazard_in_count = MonitorData.objects.filter(
+        SRNO__in=MachineMast.objects.filter(machineno__in=['3', '7']).values_list('SRNO', flat=True),
+        PunchDate__date=selected_date,
+    ).count()
+    
+    hazard_out_count = MonitorData.objects.filter(
+        SRNO__in=MachineMast.objects.filter(machineno__in=['4', '8']).values_list('SRNO', flat=True),
+        PunchDate__date=selected_date,
+    ).count()
 
-            # Hazard total logic
-            if machine.machineno in ['3', '7']:
-                hazard_total += 1
-            elif machine.machineno in ['4', '8']:
-                hazard_total -= 1  # Exit means decrease from total
-    # Final calculations if needed, e.g., total headcount calculations
-    total_non_hazard_head_count = non_hazard_in - non_hazard_out
-    total_hazard_head_count = hazard_in_count - hazard_out_count
-    total_wagen_head_count = wagen_in_count - wagen_out_count
-    total_tank_head_count = tank_in_count - tank_out_count
-    data = {
+    non_hazard_in = MonitorData.objects.filter(
+        SRNO__in=MachineMast.objects.filter(machineno__in=['1', '5']).values_list('SRNO', flat=True),
+        PunchDate__date=selected_date,
+    ).count()
+    
+    non_hazard_out = MonitorData.objects.filter(
+        SRNO__in=MachineMast.objects.filter(machineno__in=['2', '6']).values_list('SRNO', flat=True),
+        PunchDate__date=selected_date,
+    ).count()
 
-        'form_valid': form_valid,
+    return JsonResponse({
+        'live_data': data,
         'hazard_in_count': hazard_in_count,
         'hazard_out_count': hazard_out_count,
-        'hazard_total': hazard_total,
+        'hazard_total': hazard_in_count - hazard_out_count,
         'non_hazard_in': non_hazard_in,
         'non_hazard_out': non_hazard_out,
-        'non_hazard_total': non_hazard_total,
-        'data': data,
-    }
-    return JsonResponse(data)
+        'non_hazard_total': non_hazard_in - non_hazard_out,
+    })
+
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -827,32 +794,36 @@ def edit_employee(request, pk):
     employe = get_object_or_404(EmpMast, pk=pk)
     if request.method == 'POST':
         form = EmpForm(request.POST, instance=employe)
-      
         if form.is_valid():
+           
             employee = form.save(commit=False)
-            # enroll = EnrollMast.objects.get(EnrollID=request.POST.get('enrollid'))
-            deparment = DepartMast.objects.get(DepartId=request.POST.get('department'))
-            designation = DesMast.objects.get(Desgid=request.POST.get('designation'))
-            employee.deparment = deparment
-            employee.save()
-            employee.designation = designation
+
+            # Save updated employee
             employee.save()
             return redirect('emp_master')
-    else:   
-        form = EmpForm(instance=employe) 
-   
+        else:
+            print(form.errors)  # Debugging: Check form validation errors
+    else:
+        form = EmpForm(instance=employe)
+
     departlist = DepartMast.objects.all()
     designationlist = DesMast.objects.select_related('department').all()
+
     designation_dict = {}
     for desg in designationlist:
         depart_id = desg.department.DepartId
         if depart_id not in designation_dict:
             designation_dict[depart_id] = []
         designation_dict[depart_id].append({
-            'Desgid':desg.Desgid,
+            'Desgid': desg.Desgid,
             'Designation': desg.Designation
-            })
-    return render(request, 'pages/edit_employee.html', {'form': form,'designationlist':designationlist, 'designation_dict' : designation_dict,  'departlist' : departlist,})
+        })
+
+    return render(request, 'pages/edit_employee.html', {
+        'form': form,
+        'departlist': departlist,
+        'designation_dict': designation_dict,
+    })
 
 def delete_employee(request, pk):
     employee = get_object_or_404(EmpMast, pk=pk)
@@ -1061,13 +1032,13 @@ def category(request):
         machine = machine_dict.get(live.SRNO)
         if machine:
             if machine.machineno in ['1', '5']:
-                min_ids.add(live.EnrollID)
+                min_ids.append(live.EnrollID)
             elif machine.machineno in ['2', '6']:
-                mout_ids.add(live.EnrollID)
+                mout_ids.append(live.EnrollID)
             elif machine.machineno in ['3', '7']:
-                gin_ids.add(live.EnrollID)
+                gin_ids.append(live.EnrollID)
             elif machine.machineno in ['4', '8']:
-                gout_ids.add(live.EnrollID)
+                gout_ids.append(live.EnrollID)
 
     # Populate gate-specific data
     for live in livedata:
@@ -1082,10 +1053,10 @@ def category(request):
             'empcode': employeedata.empcode if employeedata else None,
             'department': employeedata.department.DepartName if employeedata else None
         }
-       
-        if machine.machineno in ['1', '5'] and live.EnrollID in min_ids and live.EnrollID not in mout_ids:
+
+        if live.EnrollID in min_ids and live.EnrollID not in mout_ids:
             gate_data['main_gate'].append({'monitor': live, 'machine': machine, 'employee': employee_info})
-        elif machine.machineno in ['3', '7'] and live.EnrollID in gin_ids and live.EnrollID not in gout_ids:
+        elif live.EnrollID in gin_ids and live.EnrollID not in gout_ids:
             gate_data['gate3'].append({'monitor': live, 'machine': machine, 'employee': employee_info})
    
     # Prepare the context with department-wise data

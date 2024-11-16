@@ -25,10 +25,9 @@ class DesForm(forms.ModelForm):
         fields = ['Designation','department']
 
 class EmpForm(forms.ModelForm):
-    empcode = ModelChoiceField(queryset=MonitorData.objects.all(), required=True)
     class Meta:
         model = EmpMast
-        fields = ['empcode','Name','department','designation']
+        fields = ['empcode','Name']
 
 class DateForm(forms.Form):
     selected_date = forms.DateField(

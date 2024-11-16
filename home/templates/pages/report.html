@@ -299,4 +299,22 @@
     }
   }
 </script>
+<script type="text/javascript">
+  $(document).ready(function() {
+    // Check the time and trigger the download at 11:59 PM
+    setInterval(function() {
+        let now = new Date();
+        if (now.getHours() === 20 && now.getMinutes() === 36) {
+            // Trigger download
+            const downloadLink = document.createElement('a');
+            downloadLink.href = 'D:/daily_report.pdf'; // Backend endpoint for the latest report
+            downloadLink.download = 'Daily_Report_' + now.toISOString().slice(0, 10) + '.pdf';
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+    }, 6000); // Check every minute
+});
+
+</script>
 {% endblock javascripts %}
