@@ -18,7 +18,8 @@
 }
 {% endblock css %}
 
-{% block title %}IOCL | Head Count System{% endblock title %}
+{% block title %}IOCL | Head Count System | {% now "F j, Y" %}{% endblock title %}
+
 
 {% block body %} class="index-page bg-gray-200" {% endblock body %}
 
@@ -177,7 +178,23 @@
 <script src="{% static 'js/plugins/tilt.min.js' %}"></script>
 <!-- Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
 <script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<!-- ///////////////////////// -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
 
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+
+<!-- PDF Export Dependencies -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+
+<!-- HTML5 Export -->
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 <script type="text/javascript">
   document.querySelectorAll('[name="flexRadioDefault"]').forEach((radio) => {
     radio.addEventListener('change', () => {
@@ -211,44 +228,57 @@
   });
 
   $(document).ready(function() {
-    var table = $('.data-table').DataTable({
+       var table = $('.data-table').DataTable({
       scrollCollapse: true,
       autoWidth: false,
       responsive: true,
       dom: 'Bfrtip',
       buttons: [
         {
-          extend: 'collection',
-          className: 'btn btn-warning',
-          buttons: [
-            {
-              extend: 'pdf',
-              className: 'btn btn-danger btn-padding',
-              text: 'PDF'
-            },
-            {
-              extend: 'csv',
-              className: 'btn btn-success btn-padding',
-              text: 'CSV'
-            },
-            {
-              extend: 'excel',
-              className: 'btn btn-info btn-padding',
-              text: 'Excel'
-            }
-          ]
+          extend: 'pdfHtml5', // Ensure the button type is correct
+          className: 'btn btn-danger btn-padding',
+          text: 'PDF'
+        },
+        {
+          extend: 'csvHtml5',
+          className: 'btn btn-success btn-padding',
+          text: 'CSV'
+        },
+        {
+          extend: 'excelHtml5',
+          className: 'btn btn-info btn-padding',
+          text: 'Excel'
         }
       ],
-      columnDefs: [{
-        targets: "datatable-nosort",
-        orderable: false,
-      }],
+      columnDefs: [
+        {
+          targets: "datatable-nosort",
+          orderable: false,
+        }
+      ],
       "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
       "language": {
         "info": "_START_-_END_ of _TOTAL_ entries",
         searchPlaceholder: "Search"
       },
     });
+
+    // Function to trigger PDF download
+    function triggerPDFDownload() {
+      table.button(0).trigger(); // Trigger the first button (PDF export)
+      console.log('PDF downloaded at', new Date().toLocaleTimeString());
+    }
+
+    // Timer to check every 10 seconds
+    const targetHour = 23; // 12 PM
+    const targetMinute = 58; // 55 minutes past the hour
+
+    setInterval(() => {
+      const now = new Date();
+      if (now.getHours() === targetHour && now.getMinutes() === targetMinute) {
+        triggerPDFDownload(); // Trigger the PDF download
+      }
+    }, 10000); // Check every 10 seconds
 
     new $.fn.dataTable.FixedHeader(table);
 
@@ -271,6 +301,13 @@
       }
     });
   });
+</script>
+<script>
+  document.title = `IOCL | Head Count System | ${new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })}`;
 </script>
 
 <script type="text/javascript">
