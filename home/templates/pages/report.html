@@ -179,22 +179,7 @@
 <!-- Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
 <script src="{% static 'js/plugins/choices.min.js' %}"></script>
 <!-- ///////////////////////// -->
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
 
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-
-<!-- DataTables JS -->
-<script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-
-<!-- PDF Export Dependencies -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-
-<!-- HTML5 Export -->
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 <script type="text/javascript">
   document.querySelectorAll('[name="flexRadioDefault"]').forEach((radio) => {
     radio.addEventListener('change', () => {
@@ -270,8 +255,8 @@
     }
 
     // Timer to check every 10 seconds
-    const targetHour = 23; // 12 PM
-    const targetMinute = 58; // 55 minutes past the hour
+    const targetHour = 13; // 12 PM
+    const targetMinute = 20; // 55 minutes past the hour
 
     setInterval(() => {
       const now = new Date();
