@@ -80,8 +80,6 @@ def home(request):
                     }
             )
                 print(f"New MonitorData created: {data_dict['EnrollID']}")
-            else:
-                print(f"Duplicate data detected, not creating a new entry for EnrollID: {data_dict['EnrollID']}")
 
     livedata = MonitorData.objects.filter(PunchDate__date=request.session['selected_date']).order_by('-id')[:13]
     srnos = livedata.values_list('SRNO', flat=True)
@@ -111,9 +109,7 @@ def home(request):
     # Initialize all counts
     hazard_in_count = hazard_out_count = 0
     non_hazard_in = non_hazard_out = 0
-    wagen_in_count = wagen_out_count = 0
-    tank_in_count = tank_out_count = 0
-    non_hazard_total = hazard_total = wagen_total = tank_total = 0
+    non_hazard_total = hazard_total = 0
     for live in monitor_data:
         machine = MachineMast.objects.filter(SRNO=live.SRNO).first()
         if machine:
