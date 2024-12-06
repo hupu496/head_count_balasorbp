@@ -39,6 +39,7 @@ class MonitorData(models.Model):
     SRNO = models.CharField(max_length=50)
     EnrollID = models.CharField(max_length = 100)
     PunchDate = models.DateTimeField()
+    TRID= models.CharField(max_length=50)
     Errorstatus = models.IntegerField(default=0)
     def __str__(self):
         return self.SRNO

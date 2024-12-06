@@ -76,6 +76,7 @@ def home(request):
                         'SRNO': data_dict['SRNO'],
                         'EnrollID': data_dict['EnrollID'],
                         'PunchDate': data_dict['PunchDate'],
+                        'TRID':data_dict['TRID'],
                         'Errorstatus':'0'
                     }
             )
@@ -140,6 +141,7 @@ def home(request):
                             EnrollID=live.EnrollID,
                             PunchDate=adjusted_punchtime,
                             SRNO=previous_srnos,
+                            TRID=previous_machineno,
                             Errorstatus=2
                             ).exists()
                         if not exists:
@@ -152,6 +154,7 @@ def home(request):
                                 EnrollID=live.EnrollID,
                                 PunchDate=adjusted_punchtime,
                                 SRNO=previous_srno,
+                                TRID=previous_machineno,
                                 Errorstatus=2  # Mark it as error status
                             )
         if live.EnrollID:  # out console auto entry 
@@ -173,6 +176,7 @@ def home(request):
                             EnrollID=live.EnrollID,
                             PunchDate=adjusted_punchtime,
                             SRNO=previous_srnos,
+                            TRID=previous_machineno,
                             Errorstatus=2
                             ).exists()
                         if not exists:
@@ -185,6 +189,7 @@ def home(request):
                                 EnrollID=live.EnrollID,
                                 PunchDate=adjusted_punchtime,
                                 SRNO=previous_srno,
+                                TRID=previous_machineno,
                                 Errorstatus=2  # Mark it as error status
                             )
 
@@ -214,32 +219,51 @@ def home(request):
             elif last_machine == '6':
                 previous_machine_no = '5'
 
-            if previous_machine_no:
-                # Get SRNO for the previous "in" machine
-                previous_srno = MachineMast.objects.filter(machineno=previous_machine_no).values_list('SRNO', flat=True).first()
-                if previous_srno:
-                    new_punch_date = live.PunchDate - timedelta(seconds=30)
+            enroll_ids = MonitorData.objects.filter(TRID__in=[1, 5],PunchDate=today).order_by('-id').values_list('EnrollID', flat=True)
+            if len(enroll_ids) > 1:
+                recent_minus_one = enroll_ids[1]
+                print("Second most recent EnrollID:", recent_minus_one)
+                pass
+            else:
+                if previous_machine_no:
+                    # Retrieve the SRNO for the previous "in" machine
+                    previous_srno = MachineMast.objects.filter(
+                        machineno=previous_machine_no
+                    ).values_list('SRNO', flat=True).first()
 
-                    # Check if the record already exists (to avoid duplicates)
-                    exists = MonitorData.objects.filter(
-                        EnrollID=live.EnrollID,
-                        PunchDate=new_punch_date,
-                        SRNO=previous_srno,
-                        Errorstatus=1  # Ensure you're checking for Errorstatus=1 to match the exact entry
-                    ).exists()
-                    
-                    if not exists:
-                        # Get the last id to avoid conflicts
-                        last_id = MonitorData.objects.aggregate(max_id=models.Max('id'))['max_id']
-                        new_id = (last_id or 0) + 1
-                        # Insert the new record into MonitorData
-                        MonitorData.objects.create(
-                            id=new_id,
+                    if previous_srno:
+                        # Generate the new punch date, 30 seconds before the current punch
+                        new_punch_date = live.PunchDate - timedelta(seconds=30)
+
+                        # Check if a similar record already exists to avoid duplicates
+                        record_exists = MonitorData.objects.filter(
                             EnrollID=live.EnrollID,
                             PunchDate=new_punch_date,
                             SRNO=previous_srno,
-                            Errorstatus=1  # Mark it as error status
-                        )
+                            TRID=previous_machine_no,
+                            Errorstatus=1
+                        ).exists()
+
+                        if not record_exists:
+                            try:
+                                # Use an atomic transaction to ensure data integrity
+                                with transaction.atomic():
+                                    # Retrieve the highest ID from MonitorData
+                                    last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id']
+                                    new_id = (last_id or 0) + 1
+
+                                    # Create a new record in the database
+                                    MonitorData.objects.create(
+                                        id=new_id,
+                                        EnrollID=live.EnrollID,
+                                        PunchDate=new_punch_date,
+                                        SRNO=previous_srno,
+                                        TRID=previous_machine_no,
+                                        Errorstatus=1  # Marking it as an error entry
+                                    )
+                            except Exception as e:
+                                # Log the error for debugging
+                                print(f"Error while creating a new record: {e}")
 
             # After inserting, update the "in" count and recalculate
             if previous_machine_no in ['1', '5']:
@@ -256,34 +280,51 @@ def home(request):
             elif last_machine == '8':
                 previous_machine_no = '7'
 
-            if previous_machine_no:
-                # Get SRNO for the previous "in" machine
-                previous_srno = MachineMast.objects.filter(machineno=previous_machine_no).values_list('SRNO', flat=True).first()
+            enroll_ids = MonitorData.objects.filter(TRID__in=[3, 7],PunchDate=today).order_by('-id').values_list('EnrollID', flat=True)
+            if len(enroll_ids) > 1:
+                recent_minus_one = enroll_ids[1]
+                print("Second most recent EnrollID:", recent_minus_one)
+                pass
+            else:
+                if previous_machine_no:
+                    # Retrieve the SRNO for the previous "in" machine
+                    previous_srno = MachineMast.objects.filter(
+                        machineno=previous_machine_no
+                    ).values_list('SRNO', flat=True).first()
 
-                if previous_srno:
-                    new_punch_date = live.PunchDate - timedelta(seconds=30)
+                    if previous_srno:
+                        # Generate the new punch date, 30 seconds before the current punch
+                        new_punch_date = live.PunchDate - timedelta(seconds=30)
 
-                    # Check if the record already exists (to avoid duplicates)
-                    exists = MonitorData.objects.filter(
-                        EnrollID=live.EnrollID,
-                        PunchDate=new_punch_date,
-                        SRNO=previous_srno,
-                        Errorstatus=1  # Ensure you're checking for Errorstatus=1 to match the exact entry
-                    ).exists()
-
-                    if not exists:
-                        # Get the last id to avoid conflicts
-                        last_id = MonitorData.objects.aggregate(max_id=models.Max('id'))['max_id']
-                        new_id = (last_id or 0) + 1
-
-                        # Insert the new record into MonitorData
-                        MonitorData.objects.create(
-                            id=new_id,
+                        # Check if a similar record already exists to avoid duplicates
+                        record_exists = MonitorData.objects.filter(
                             EnrollID=live.EnrollID,
                             PunchDate=new_punch_date,
                             SRNO=previous_srno,
-                            Errorstatus=1  # Mark it as error status
-                        )
+                            TRID=previous_machine_no,
+                            Errorstatus=1
+                        ).exists()
+
+                        if not record_exists:
+                            try:
+                                # Use an atomic transaction to ensure data integrity
+                                with transaction.atomic():
+                                    # Retrieve the highest ID from MonitorData
+                                    last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id']
+                                    new_id = (last_id or 0) + 1
+
+                                    # Create a new record in the database
+                                    MonitorData.objects.create(
+                                        id=new_id,
+                                        EnrollID=live.EnrollID,
+                                        PunchDate=new_punch_date,
+                                        SRNO=previous_srno,
+                                        TRID=previous_machine_no,
+                                        Errorstatus=1  # Marking it as an error entry
+                                    )
+                            except Exception as e:
+                                # Log the error for debugging
+                                print(f"Error while creating a new record: {e}")
 
             if previous_machine_no in ['3', '7']:
                 hazard_in_count += 1
@@ -300,7 +341,6 @@ def home(request):
         'hazard_in_count': hazard_in_count,
         'hazard_out_count': hazard_out_count,
         'hazard_total': total_hazard_head_count,
-
         'non_hazard_in': non_hazard_in,
         'non_hazard_out': non_hazard_out,
         'non_hazard_total': total_non_hazard_head_count,
@@ -342,6 +382,7 @@ def live_data(request):
                 SRNO=data_dict['SRNO'],
                 EnrollID=data_dict['EnrollID'],
                 PunchDate=data_dict['PunchDate'],
+                TRID =data_dict['TRID'],
                 defaults={'Errorstatus': '0'}
             )
 
@@ -512,44 +553,92 @@ def list(request, lists):
                 if machine.machineno in ['2', '6']:
                    pass
             else:
-                srnosfind = MachineMast.objects.filter(machineno__in=['2', '6']).values_list('SRNO', flat=True)
-                if machine.machineno in ['1', '5']:  
-                    data = []  # To store the results
-                    processed_mout_ids = mout_ids.copy()  # Create a copy of gout_ids to track the remaining pairs
-
-                    for min_id in min_ids:  # Loop through all gin_ids, even duplicates
-                        if min_id in processed_mout_ids:  
-                            # If gin_id has a pair in gout_ids, remove it from processed_gout_ids (treat it as "paired")
-                            processed_mout_ids.remove(min_id)
+                if machine.machineno in ['1', '5']:
+                    data = []  # Initialize the list to store results
+                    processed_min_ids = min_ids.copy()  # Copy min_ids to track unmatched IDs
+                    removed_items, remaining_items = process_ids(mout_ids, processed_min_ids)
+                    liveharard = MonitorData.objects.filter(
+                        EnrollID__in=remaining_items,  # Filter for remaining unmatched IDs
+                        PunchDate__date=selected_date   # Filter by the selected date
+                    )
+                    for remainid in liveharard:
+                        # Find machine using SRNO
+                        machine = machine_dict.get(remainid.SRNO)
+                        if not machine:
+                            continue  # Skip if the machine is not found
+                        # Fetch employee details using EnrollID
+                        enroll_data = enroll_dict.get(remainid.EnrollID)
+                        if enroll_data:
+                            employeedata = employee_dict.get(enroll_data)
                         else:
-                            # If gin_id doesn't have a pair, process it and append to data
-                            data.append({
-                                'monitor': live,  # Assuming `live` contains relevant info for the current gin_id
-                                'machine': machine,
-                                'employee': employee_info
-                            })
+                            employeedata = None
+                        # Prepare employee information
+                        if employeedata:
+                            employee_info = {
+                                'name': employeedata.Name,
+                                'empcode': employeedata.empcode,
+                                'designation': employeedata.designation.Designation,
+                                'department': employeedata.department.DepartName
+                            }
+                        else:
+                            employee_info = {
+                                'name': None,
+                                'designation': None,
+                                'department': None
+                            }
+                        
+                        # Append the  print(data)
+                    data.append({
+                        'monitor': remainid,
+                        'machine': machine,
+                        'employee': employee_info
+                    })
                     
         elif lists == 'GATE3 TOTAL HEAD COUNT':
             if (len(gin_ids) <= len(gout_ids)):
                 if machine.machineno in ['4', '8']:
                    pass
             else:
-                srnosfind = MachineMast.objects.filter(machineno__in=['4', '8']).values_list('SRNO', flat=True)
                 if machine.machineno in ['3', '7']:
-                    data = []  # To store the results
-                    processed_gout_ids = gout_ids.copy()  # Create a copy of gout_ids to track the remaining pairs
-
-                    for gin_id in gin_ids:  # Loop through all gin_ids, even duplicates
-                        if gin_id in processed_gout_ids:  
-                            # If gin_id has a pair in gout_ids, remove it from processed_gout_ids (treat it as "paired")
-                            processed_gout_ids.remove(gin_id)
+                    data = []  # Initialize the list to store results
+                    processed_gin_ids = gin_ids.copy()  # Copy gin_ids to track unmatched IDs
+                    removed_items, remaining_items = process_ids(gout_ids, processed_gin_ids)
+                    liveharard = MonitorData.objects.filter(
+                        EnrollID__in=remaining_items,  # Filter for remaining unmatched IDs
+                        PunchDate__date=selected_date   # Filter by the selected date
+                    )
+                    for remainid in liveharard:
+                        # Find machine using SRNO
+                        machine = machine_dict.get(remainid.SRNO)
+                        if not machine:
+                            continue  # Skip if the machine is not found
+                        # Fetch employee details using EnrollID
+                        enroll_data = enroll_dict.get(remainid.EnrollID)
+                        if enroll_data:
+                            employeedata = employee_dict.get(enroll_data)
                         else:
-                            # If gin_id doesn't have a pair, process it and append to data
-                            data.append({
-                                'monitor': live,  # Assuming `live` contains relevant info for the current gin_id
-                                'machine': machine,
-                                'employee': employee_info
-                            })
+                            employeedata = None
+                        # Prepare employee information
+                        if employeedata:
+                            employee_info = {
+                                'name': employeedata.Name,
+                                'empcode': employeedata.empcode,
+                                'designation': employeedata.designation.Designation,
+                                'department': employeedata.department.DepartName
+                            }
+                        else:
+                            employee_info = {
+                                'name': None,
+                                'designation': None,
+                                'department': None
+                            }
+                        
+                        # Append the  print(data)
+                    data.append({
+                        'monitor': remainid,
+                        'machine': machine,
+                        'employee': employee_info
+                    })
         elif lists == 'GATE3 IN':
             if (len(gin_ids) <= len(gout_ids)):
                 if machine.machineno in ['4', '8']:
@@ -560,7 +649,6 @@ def list(request, lists):
                     })
             elif machine.machineno in ['3','7']:
                 if live.EnrollID in gin_ids:
-                  
                     data.append({
                         'monitor': live,
                         'machine': machine,
@@ -568,7 +656,6 @@ def list(request, lists):
                     })
         elif lists == 'GATE3 OUT' and (machine.machineno == '4' or machine.machineno == '8'):
             if live.EnrollID in gout_ids:
-              
                 data.append({
                     'monitor': live,
                     'machine': machine,
@@ -580,7 +667,21 @@ def list(request, lists):
     }
     return render(request, 'pages/list.html', context)
 
+def process_ids(gout_ids, processed_gin_ids):
+    removed_items = []  # Array to store removed items
+    remaining_items = []  # Array to store remaining items
 
+    for hout_id in hout_ids:
+        if hout_id in processed_hin_ids:
+            processed_hin_ids.remove(hout_id)  # Remove the first occurrence from processed_hin_ids
+            removed_items.append(hout_id)  # Add to removed_items
+        else:
+            remaining_items.append(hout_id)  # Add to remaining_items
+
+    # Add any remaining elements of processed_hin_ids to remaining_items
+    remaining_items.extend(processed_hin_ids)
+
+    return removed_items, remaining_items
 
 def index(request,listing):
     # Page from the theme 
