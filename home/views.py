@@ -462,7 +462,7 @@ def logout_view(request):
     logout(request)
     return redirect('list')
 
-def list(request, lists):
+def listss(request, lists):
     if request.session.get('previous_date'):
         selected_date = request.session.get('previous_date', None)
     else:
@@ -557,42 +557,37 @@ def list(request, lists):
                     data = []  # Initialize the list to store results
                     processed_min_ids = min_ids.copy()  # Copy min_ids to track unmatched IDs
                     removed_items, remaining_items = process_ids(mout_ids, processed_min_ids)
-                    liveharard = MonitorData.objects.filter(
-                        EnrollID__in=remaining_items,  # Filter for remaining unmatched IDs
-                        PunchDate__date=selected_date   # Filter by the selected date
-                    )
-                    for remainid in liveharard:
-                        # Find machine using SRNO
-                        machine = machine_dict.get(remainid.SRNO)
-                        if not machine:
-                            continue  # Skip if the machine is not found
-                        # Fetch employee details using EnrollID
-                        enroll_data = enroll_dict.get(remainid.EnrollID)
-                        if enroll_data:
-                            employeedata = employee_dict.get(enroll_data)
-                        else:
-                            employeedata = None
-                        # Prepare employee information
+
+                    enroll_data = sorted(set(remaining_items))  # Remove duplicates and sort if needed
+                    print(enroll_data)  # Single-row output
+
+
+                    # Fetch employee data based on enroll_data
+
+                    for remainid in enroll_data:  # Iterate over each ID in the single-row output
+                        employeedata = EmpMast.objects.filter(empcode=remainid).first()  # Use `first()` to fetch the first matching record
+                        print(employeedata.empcode)
+
                         if employeedata:
                             employee_info = {
                                 'name': employeedata.Name,
                                 'empcode': employeedata.empcode,
                                 'designation': employeedata.designation.Designation,
-                                'department': employeedata.department.DepartName
+                                'department': employeedata.department.DepartName,
                             }
                         else:
                             employee_info = {
                                 'name': None,
                                 'designation': None,
-                                'department': None
+                                'department': None,
                             }
-                        
-                        # Append the  print(data)
-                    data.append({
-                        'monitor': remainid,
-                        'machine': machine,
-                        'employee': employee_info
-                    })
+
+                        # Append the employee data to the results list
+                        data.append({
+                            'monitor': remainid,
+                            'machine': machine.machineno,
+                            'employee': employee_info,
+                        })
                     
         elif lists == 'GATE3 TOTAL HEAD COUNT':
             if (len(gin_ids) <= len(gout_ids)):
@@ -603,42 +598,36 @@ def list(request, lists):
                     data = []  # Initialize the list to store results
                     processed_gin_ids = gin_ids.copy()  # Copy gin_ids to track unmatched IDs
                     removed_items, remaining_items = process_ids(gout_ids, processed_gin_ids)
-                    liveharard = MonitorData.objects.filter(
-                        EnrollID__in=remaining_items,  # Filter for remaining unmatched IDs
-                        PunchDate__date=selected_date   # Filter by the selected date
-                    )
-                    for remainid in liveharard:
-                        # Find machine using SRNO
-                        machine = machine_dict.get(remainid.SRNO)
-                        if not machine:
-                            continue  # Skip if the machine is not found
-                        # Fetch employee details using EnrollID
-                        enroll_data = enroll_dict.get(remainid.EnrollID)
-                        if enroll_data:
-                            employeedata = employee_dict.get(enroll_data)
-                        else:
-                            employeedata = None
-                        # Prepare employee information
+                    enroll_data = sorted(set(remaining_items))  # Remove duplicates and sort if needed
+                    print(enroll_data)  # Single-row output
+
+
+                    # Fetch employee data based on enroll_data
+
+                    for remainid in enroll_data:  # Iterate over each ID in the single-row output
+                        employeedata = EmpMast.objects.filter(empcode=remainid).first()  # Use `first()` to fetch the first matching record
+                        print(employeedata.empcode)
+
                         if employeedata:
                             employee_info = {
                                 'name': employeedata.Name,
                                 'empcode': employeedata.empcode,
                                 'designation': employeedata.designation.Designation,
-                                'department': employeedata.department.DepartName
+                                'department': employeedata.department.DepartName,
                             }
                         else:
                             employee_info = {
                                 'name': None,
                                 'designation': None,
-                                'department': None
+                                'department': None,
                             }
-                        
-                        # Append the  print(data)
-                    data.append({
-                        'monitor': remainid,
-                        'machine': machine,
-                        'employee': employee_info
-                    })
+
+                        # Append the employee data to the results list
+                        data.append({
+                            'monitor': remainid,
+                            'machine': machine.machineno,
+                            'employee': employee_info,
+                        })
         elif lists == 'GATE3 IN':
             if (len(gin_ids) <= len(gout_ids)):
                 if machine.machineno in ['4', '8']:

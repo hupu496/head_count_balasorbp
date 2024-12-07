@@ -12,7 +12,7 @@ urlpatterns = [
     path('live_data/', views.live_data, name='live_data'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
     path('index/<str:listing>', views.index, name='index'),
-    path('list/<str:lists>', views.list, name='list'),
+    path('list/<str:lists>', views.listss, name='list'),
     path('report/', views.report, name='report'),
     path('dashboard/',views.dashboard, name='dashboard'),
     path('depart_master/',views.depart_master, name='depart_master'),
