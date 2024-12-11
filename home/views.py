@@ -39,7 +39,7 @@ def home(request):
         request.session['selected_date'] = today.strftime("%Y-%m-%d")
     with pyodbc.connect(
         'Driver={SQL Server};'
-        'Server=DESKTOP-5N7IKQ6;'
+        'Server=DESKTOP-FEURJVI;'
         'Database=DATAIOCL;'
         'Trusted_Connection=yes;'
     ) as conn:
@@ -122,7 +122,7 @@ def home(request):
                 hazard_in_count += 1
             elif machine.machineno in ['4', '8']:  # Hazard Out
                 hazard_out_count += 1
-        if live.EnrollID:  # out console auto entry 
+        if machine and live.EnrollID:  # out console auto entry 
             if machine.machineno in ['1','5']:
                 # Fetch the SRNO for the previous machine number (if needed)
                 current_Srno = MachineMast.objects.filter(machineno=machine.machineno).values_list('SRNO', flat=True).first()
@@ -157,7 +157,7 @@ def home(request):
                                 TRID=previous_machineno,
                                 Errorstatus=2  # Mark it as error status
                             )
-        if live.EnrollID:  # out console auto entry 
+        if machine and live.EnrollID:  # out console auto entry 
             if machine.machineno in ['3','7']:
                 # Fetch the SRNO for the previous machine number (if needed)
                 current_Srno = MachineMast.objects.filter(machineno=machine.machineno).values_list('SRNO', flat=True).first()
@@ -218,52 +218,64 @@ def home(request):
                 previous_machine_no = '1'
             elif last_machine == '6':
                 previous_machine_no = '5'
-
-            enroll_ids = MonitorData.objects.filter(TRID__in=[1, 5],PunchDate=today).order_by('-id').values_list('EnrollID', flat=True)
-            if len(enroll_ids) > 1:
-                recent_minus_one = enroll_ids[1]
-                print("Second most recent EnrollID:", recent_minus_one)
-                pass
+            enroll_ids = MonitorData.objects.filter(EnrollID=live.EnrollID, PunchDate__date=today).order_by('-id')
+            if enroll_ids.count() >= 2:
+                # Get the second-last entry
+                second_last_entry = enroll_ids[1]
+                
+                # Check if TRID of the second-last entry is in [1, 5]
+                if second_last_entry.TRID in [1, 5]:
+                    # Pass the data (you can handle this part as per your logic)
+                    pass
+                else:
+                    # Print the second-last entry details if TRID condition isn't met
+                    print(f"Second-last entry for EnrollID {live.EnrollID} has TRID={second_last_entry.TRID}, which is not in [1, 5].")
             else:
                 if previous_machine_no:
-                    # Retrieve the SRNO for the previous "in" machine
                     previous_srno = MachineMast.objects.filter(
-                        machineno=previous_machine_no
-                    ).values_list('SRNO', flat=True).first()
+                            machineno=previous_machine_no
+                        ).values_list('SRNO', flat=True).first()
 
-                    if previous_srno:
-                        # Generate the new punch date, 30 seconds before the current punch
-                        new_punch_date = live.PunchDate - timedelta(seconds=30)
+                        if previous_srno:
+                            # Generate the new punch date, 30 seconds before the current punch
+                            new_punch_date = live.PunchDate - timedelta(seconds=30)
 
-                        # Check if a similar record already exists to avoid duplicates
-                        record_exists = MonitorData.objects.filter(
-                            EnrollID=live.EnrollID,
-                            PunchDate=new_punch_date,
-                            SRNO=previous_srno,
-                            TRID=previous_machine_no,
-                            Errorstatus=1
-                        ).exists()
+                            # Check if a similar record already exists to avoid duplicates
+                            record_exists = MonitorData.objects.filter(
+                                EnrollID=live.EnrollID,
+                                PunchDate=new_punch_date,
+                                SRNO=previous_srno,
+                                TRID=previous_machine_no,
+                                Errorstatus=1
+                            ).exists()
+                            
 
-                        if not record_exists:
-                            try:
-                                # Use an atomic transaction to ensure data integrity
-                                with transaction.atomic():
-                                    # Retrieve the highest ID from MonitorData
-                                    last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id']
-                                    new_id = (last_id or 0) + 1
+                            if not record_exists:
+                                try:
+                                    # Use an atomic transaction to ensure data integrity
+                                    with transaction.atomic():
+                                        # Retrieve the highest ID from MonitorData
+                                        last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id']
+                                        new_id = (last_id or 0) + 1
 
-                                    # Create a new record in the database
-                                    MonitorData.objects.create(
-                                        id=new_id,
-                                        EnrollID=live.EnrollID,
-                                        PunchDate=new_punch_date,
-                                        SRNO=previous_srno,
-                                        TRID=previous_machine_no,
-                                        Errorstatus=1  # Marking it as an error entry
-                                    )
-                            except Exception as e:
-                                # Log the error for debugging
-                                print(f"Error while creating a new record: {e}")
+                                        # Create a new record in the database
+                                        MonitorData.objects.create(
+                                            id=new_id,
+                                            EnrollID=live.EnrollID,
+                                            PunchDate=new_punch_date,
+                                            SRNO=previous_srno,
+                                            TRID=previous_machine_no,
+                                            Errorstatus=1  # Marking it as an error entry
+                                        )
+                                except Exception as e:
+                                    # Log the error for debugging
+                                    print(f"Error while creating a new record: {e}")
+
+                        
+
+                        
+                
+                    
 
             # After inserting, update the "in" count and recalculate
             if previous_machine_no in ['1', '5']:
@@ -279,52 +291,58 @@ def home(request):
                 previous_machine_no = '3'
             elif last_machine == '8':
                 previous_machine_no = '7'
-
-            enroll_ids = MonitorData.objects.filter(TRID__in=[3, 7],PunchDate=today).order_by('-id').values_list('EnrollID', flat=True)
-            if len(enroll_ids) > 1:
-                recent_minus_one = enroll_ids[1]
-                print("Second most recent EnrollID:", recent_minus_one)
-                pass
+            enroll_ids = MonitorData.objects.filter(EnrollID=live.EnrollID, PunchDate__date=today).order_by('-id')
+            if enroll_ids.count() >= 2:
+                # Get the second-last entry
+                second_last_entry = enroll_ids[1]
+                
+                # Check if TRID of the second-last entry is in [1, 5]
+                if second_last_entry.TRID in [3, 7]:
+                    # Pass the data (you can handle this part as per your logic)
+                    pass
+                else:
+                    # Print the second-last entry details if TRID condition isn't met
+                    print(f"Second-last entry for EnrollID {live.EnrollID} has TRID={second_last_entry.TRID}, which is not in [1, 5].")
             else:
                 if previous_machine_no:
-                    # Retrieve the SRNO for the previous "in" machine
                     previous_srno = MachineMast.objects.filter(
-                        machineno=previous_machine_no
-                    ).values_list('SRNO', flat=True).first()
+                            machineno=previous_machine_no
+                        ).values_list('SRNO', flat=True).first()
 
-                    if previous_srno:
-                        # Generate the new punch date, 30 seconds before the current punch
-                        new_punch_date = live.PunchDate - timedelta(seconds=30)
+                        if previous_srno:
+                            # Generate the new punch date, 30 seconds before the current punch
+                            new_punch_date = live.PunchDate - timedelta(seconds=30)
 
-                        # Check if a similar record already exists to avoid duplicates
-                        record_exists = MonitorData.objects.filter(
-                            EnrollID=live.EnrollID,
-                            PunchDate=new_punch_date,
-                            SRNO=previous_srno,
-                            TRID=previous_machine_no,
-                            Errorstatus=1
-                        ).exists()
+                            # Check if a similar record already exists to avoid duplicates
+                            record_exists = MonitorData.objects.filter(
+                                EnrollID=live.EnrollID,
+                                PunchDate=new_punch_date,
+                                SRNO=previous_srno,
+                                TRID=previous_machine_no,
+                                Errorstatus=1
+                            ).exists()
 
-                        if not record_exists:
-                            try:
-                                # Use an atomic transaction to ensure data integrity
-                                with transaction.atomic():
-                                    # Retrieve the highest ID from MonitorData
-                                    last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id']
-                                    new_id = (last_id or 0) + 1
+                            if not record_exists:
+                                try:
+                                    # Use an atomic transaction to ensure data integrity
+                                    with transaction.atomic():
+                                        # Retrieve the highest ID from MonitorData
+                                        last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id']
+                                        new_id = (last_id or 0) + 1
 
-                                    # Create a new record in the database
-                                    MonitorData.objects.create(
-                                        id=new_id,
-                                        EnrollID=live.EnrollID,
-                                        PunchDate=new_punch_date,
-                                        SRNO=previous_srno,
-                                        TRID=previous_machine_no,
-                                        Errorstatus=1  # Marking it as an error entry
-                                    )
-                            except Exception as e:
-                                # Log the error for debugging
-                                print(f"Error while creating a new record: {e}")
+                                        # Create a new record in the database
+                                        MonitorData.objects.create(
+                                            id=new_id,
+                                            EnrollID=live.EnrollID,
+                                            PunchDate=new_punch_date,
+                                            SRNO=previous_srno,
+                                            TRID=previous_machine_no,
+                                            Errorstatus=1  # Marking it as an error entry
+                                        )
+                                except Exception as e:
+                                    # Log the error for debugging
+                                    print(f"Error while creating a new record: {e}")
+                        
 
             if previous_machine_no in ['3', '7']:
                 hazard_in_count += 1
@@ -357,7 +375,7 @@ def live_data(request):
 
     with pyodbc.connect(
         'Driver={SQL Server};'
-        'Server=DESKTOP-5N7IKQ6;'
+        'Server=DESKTOP-FEURJVI;'
         'Database=DATAIOCL;'
         'Trusted_Connection=yes;'
     ) as conn:
@@ -382,7 +400,6 @@ def live_data(request):
                 SRNO=data_dict['SRNO'],
                 EnrollID=data_dict['EnrollID'],
                 PunchDate=data_dict['PunchDate'],
-                TRID =data_dict['TRID'],
                 defaults={'Errorstatus': '0'}
             )
 
@@ -557,16 +574,12 @@ def listss(request, lists):
                     data = []  # Initialize the list to store results
                     processed_min_ids = min_ids.copy()  # Copy min_ids to track unmatched IDs
                     removed_items, remaining_items = process_ids(mout_ids, processed_min_ids)
-
-                    enroll_data = sorted(set(remaining_items))  # Remove duplicates and sort if needed
-                    print(enroll_data)  # Single-row output
-
-
+                    enroll_data = remaining_items  # Remove duplicates and sort if needed
                     # Fetch employee data based on enroll_data
 
                     for remainid in enroll_data:  # Iterate over each ID in the single-row output
                         employeedata = EmpMast.objects.filter(empcode=remainid).first()  # Use `first()` to fetch the first matching record
-                        print(employeedata.empcode)
+                       
 
                         if employeedata:
                             employee_info = {
@@ -598,7 +611,7 @@ def listss(request, lists):
                     data = []  # Initialize the list to store results
                     processed_gin_ids = gin_ids.copy()  # Copy gin_ids to track unmatched IDs
                     removed_items, remaining_items = process_ids(gout_ids, processed_gin_ids)
-                    enroll_data = sorted(set(remaining_items))  # Remove duplicates and sort if needed
+                    enroll_data = remaining_items  # Remove duplicates and sort if needed
                     print(enroll_data)  # Single-row output
 
 
@@ -656,19 +669,19 @@ def listss(request, lists):
     }
     return render(request, 'pages/list.html', context)
 
-def process_ids(gout_ids, processed_gin_ids):
+def process_ids(mout_ids, processed_min_ids):
     removed_items = []  # Array to store removed items
     remaining_items = []  # Array to store remaining items
 
-    for hout_id in hout_ids:
-        if hout_id in processed_hin_ids:
-            processed_hin_ids.remove(hout_id)  # Remove the first occurrence from processed_hin_ids
-            removed_items.append(hout_id)  # Add to removed_items
+    for mout_id in mout_ids:
+        if mout_id in processed_min_ids:
+            processed_min_ids.remove(mout_id)  # Remove the first occurrence from processed_hin_ids
+            removed_items.append(mout_id)  # Add to removed_items
         else:
-            remaining_items.append(hout_id)  # Add to remaining_items
+            remaining_items.append(mout_id)  # Add to remaining_items
 
     # Add any remaining elements of processed_hin_ids to remaining_items
-    remaining_items.extend(processed_hin_ids)
+    remaining_items.extend(processed_min_ids)
 
     return removed_items, remaining_items
 

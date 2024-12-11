@@ -60,7 +60,11 @@
               </div>
           </td>
           <td class="align-middle text-center">
-            <p class="text-secondary text-xs font-weight-normal">{{ item.monitor }}</p>
+           {% if item.monitor.EnrollID %}
+    <p class="text-secondary text-xs font-weight-normal">{{ item.monitor.EnrollID }}</p>
+{% else %}
+    <p class="text-secondary text-xs font-weight-normal">{{ item.monitor }}</p>
+{% endif %}
         
           </td>
           <td class="align-middle text-center">
