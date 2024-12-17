@@ -298,15 +298,4 @@ display: block;
      };
    }
 </script>
-<script type="text/javascript">
-   setInterval(function() {
-     $.ajax({
-         url: "{% url 'home' %}",
-         success: function(data) {
-             // Update the page content without refreshing
-         }
-     });
-   }, 2000);  // Makes an AJAX call every 5 seconds
-   
-</script>
 {% endblock javascripts %}

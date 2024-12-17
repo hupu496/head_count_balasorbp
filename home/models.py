@@ -62,7 +62,7 @@ class DepartMast(models.Model):
 	Status = models.TextField(default=True)
 
 	def __str__(self):
-		return f"{self.DepartId}"
+		return f"{self.DepartName}"
 
 class DesMast(models.Model):
 
