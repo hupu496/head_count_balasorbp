@@ -27,7 +27,7 @@ def home(request):
     today = timezone.now().date()
     form = DateForm(request.POST or None)
     selected_date = today
-    is_today = True  # Track if the selected date is today
+    is_today = False  # Track if the selected date is today
     form_valid = False
 
     if form.is_valid():
