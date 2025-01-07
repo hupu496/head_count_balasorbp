@@ -322,6 +322,18 @@
   }
 </script>
 <script type="text/javascript">
+  const targetTime = new Date().setHours(23, 59, 0, 0); // Set target time (1:39 PM in this example)
+  const currentTime = Date.now();
+
+  if (currentTime < targetTime) {
+    setTimeout(() => {
+      location.reload();
+    }, targetTime - currentTime);
+  } else {
+    console.log("The specified time has already passed; no action taken.");
+  }
+</script>
+<script type="text/javascript">
    setInterval(function() {
      $.ajax({
          url: "{% url 'report' %}",

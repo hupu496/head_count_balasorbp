@@ -25,7 +25,7 @@ def home(request):
         return redirect('dashboard')
 
     today = timezone.now().date()
-    form = DateForm(request.POST or None)
+    form = DateForm(initial={"selected_date": today})
     selected_date = today
     is_today = False  # Track if the selected date is today
     form_valid = False
@@ -382,70 +382,323 @@ def live_data(request):
                 'RESEND_SERVER': row[6],
             }
             # Avoid duplicates
-            MonitorData.objects.get_or_create(
-                SRNO=data_dict['SRNO'],
+            exists = MonitorData.objects.filter(
                 EnrollID=data_dict['EnrollID'],
                 PunchDate=data_dict['PunchDate'],
-                defaults={'Errorstatus': '0'}
-            )
+                SRNO=data_dict['SRNO']
+            ).exists()
 
-    livedata = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')[:13]
+            if not exists:
+                last_id = MonitorData.objects.aggregate(max_id=models.Max('id'))['max_id']
+                new_id = (last_id or 0) + 1
+                MonitorData.objects.get_or_create(
+                    id=new_id,
+                    defaults={
+                        'SRNO': data_dict['SRNO'],
+                        'EnrollID': data_dict['EnrollID'],
+                        'PunchDate': data_dict['PunchDate'],
+                        'TRID':data_dict['TRID'],
+                        'Errorstatus':'0'
+                    }
+            )
+                print(f"New MonitorData created: {data_dict['EnrollID']}")
+    # livedata = MonitorData.objects.all().order_by('-id')[:10]
+    livedata = MonitorData.objects.filter(PunchDate__date=request.session['selected_date']).order_by('-id')[:13]
+    srnos = livedata.values_list('SRNO', flat=True)
+    enrollids = livedata.values_list('EnrollID', flat=True)
+
+    machnes = MachineMast.objects.filter(SRNO__in=srnos)
+    enrolls = EnrollMast.objects.filter(enrollid__in=enrollids)
+    employees = EmpMast.objects.filter(enrollid__in=enrolls)
+
+    machine_dict = {machine.SRNO: machine for machine in machnes}
+    enroll_dict = {enroll.enrollid: enroll for enroll in enrolls}
+    employee_dict = {employee.enrollid_id: employee for employee in employees}
+
     data = []
     for live in livedata:
-        machine = MachineMast.objects.filter(SRNO=live.SRNO).first()
-        employee = None
-        enroll = None
-        if live.EnrollID:
-            enroll = EnrollMast.objects.filter(enrollid=live.EnrollID).first()
-            if enroll:
-                employee = EmpMast.objects.filter(enrollid=enroll.id).first()
-        
+        machine = machine_dict.get(live.SRNO)
+        enroll = enroll_dict.get(live.EnrollID)
+        employeedata = employee_dict.get(enroll.id) if enroll else None
         data.append({
-            'monitor': {
-                'SRNO': live.SRNO,
-                'EnrollID': live.EnrollID,
-                'PunchDate': live.PunchDate,
-            },
-            'machine': {
-                'machineno': machine.machineno if machine else None,
-                'Name': machine.Name if machine else None,
-                'Response': machine.Response if machine else None,
-            } if machine else None,
-            'employee': {
-                'empcode': employee.empcode if employee else None,
-                'Name': employee.Name if employee else None,
-            } if employee else None,
+            'monitor': live,
+            'machine': machine,
+            'employee': employeedata
         })
     
-    # Count hazards and non-hazards
-    hazard_in_count = MonitorData.objects.filter(
-        SRNO__in=MachineMast.objects.filter(machineno__in=['3', '7']).values_list('SRNO', flat=True),
-        PunchDate__date=selected_date,
-    ).count()
-    
-    hazard_out_count = MonitorData.objects.filter(
-        SRNO__in=MachineMast.objects.filter(machineno__in=['4', '8']).values_list('SRNO', flat=True),
-        PunchDate__date=selected_date,
-    ).count()
+    monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
 
-    non_hazard_in = MonitorData.objects.filter(
-        SRNO__in=MachineMast.objects.filter(machineno__in=['1', '5']).values_list('SRNO', flat=True),
-        PunchDate__date=selected_date,
-    ).count()
-    
-    non_hazard_out = MonitorData.objects.filter(
-        SRNO__in=MachineMast.objects.filter(machineno__in=['2', '6']).values_list('SRNO', flat=True),
-        PunchDate__date=selected_date,
-    ).count()
+    # Initialize all counts
+    hazard_in_count = hazard_out_count = 0
+    hazardincount = hazardoutcount = 0
+    non_hazard_in = non_hazard_out = 0
+    wagen_in_count = wagen_out_count = 0
+    tank_in_count = tank_out_count = 0
+    non_hazard_total = hazard_total = 0
+    for live in monitor_data:
+        machine = MachineMast.objects.filter(SRNO=live.SRNO).first()
+        if machine:
+            if machine.machineno in ['1', '5']:  # Non-hazard In
+                non_hazard_in += 1
+            elif machine.machineno in ['2', '6']:  # Non-hazard Out
+                non_hazard_out += 1
+            elif machine.machineno in ['3', '7']:  # Hazard In
+                hazard_in_count += 1
+            elif machine.machineno in ['4', '8']:  # Hazard Out
+                hazard_out_count += 1
+            elif machine.machineno == '9':  # Wagen In
+                wagen_in_count += 1
+            elif machine.machineno == '10':  # Wagen Out
+                wagen_out_count += 1
+            elif machine.machineno in ['11', '13']:  # Tank In
+                tank_in_count += 1
+            elif machine.machineno in ['12', '14']:  # Tank Out
+                tank_out_count += 1
+            
+        hazardincount = hazard_in_count+wagen_in_count+tank_in_count
+           
+        hazardoutcount = hazard_out_count+wagen_out_count+tank_out_count
+       
+            #out console entry 
+        if machine and live.EnrollID:  # out console auto entry 
+            if machine.machineno in ['1', '5']:
+                # Fetch the SRNO for the previous machine number (if needed)
+                current_Srno = MachineMast.objects.filter(machineno=machine.machineno).values_list('SRNO', flat=True).first()
+                # Fetch the last two records for the given SRNO and EnrollID
+                last_two_entries = MonitorData.objects.filter(SRNO=current_Srno, EnrollID=live.EnrollID, PunchDate=today).order_by('-PunchDate')[:2]
+                if len(last_two_entries) == 2:
+                    last_entry = last_two_entries[0]
+                    second_last_entry = last_two_entries[1]
+                   
+                    # Check if the last two entries are identical (based on relevant fields)
+                    if last_entry == second_last_entry:
+                        previous_machineno = MachineMast.objects.filter(SRNO=second_last_entry.SRNO).values_list('machineno',flat=True).first()
+                        previous_machineno = previous_machineno+1;
+                        previous_srnos = MachineMast.objects.filter(machineno=previous_machineno).values_list('SRNO',flat=True).first()
+                        adjusted_punchtime = second_last_entry.PunchDate + timedelta(seconds=30)
+                        exists = MonitorData.objects.filter(
+                            EnrollID=live.EnrollID,
+                            PunchDate=adjusted_punchtime,
+                            SRNO=previous_srnos,
+                            TRID=previous_machineno,
+                            Errorstatus=2
+                            ).exists()
+                        if not exists:
+                            # Get the last id to avoid conflicts
+                            last_id = MonitorData.objects.aggregate(max_id=models.Max('id'))['max_id']
+                            new_id = (last_id or 0) + 1
+                            # Insert the new record into MonitorData
+                            MonitorData.objects.create(
+                                id=new_id,
+                                EnrollID=live.EnrollID,
+                                PunchDate=adjusted_punchtime,
+                                SRNO=previous_srno,
+                                TRID=previous_machineno,
+                                Errorstatus=2  # Mark it as error status
+                            )
+        if machine and live.EnrollID:  # out console auto entry 
+            if machine.machineno in ['3','7','9','11','13']:
+                # Fetch the SRNO for the previous machine number (if needed)
+                current_Srno = MachineMast.objects.filter(machineno=machine.machineno).values_list('SRNO', flat=True).first()
+                # Fetch the last two records for the given SRNO and EnrollID
+                last_two_entries = MonitorData.objects.filter(SRNO=current_Srno, EnrollID=live.EnrollID, PunchDate=today).order_by('-PunchDate')[:2]
+                if len(last_two_entries) == 2:
+                    last_entry = last_two_entries[0]
+                    second_last_entry = last_two_entries[1]
+                   
+                    # Check if the last two entries are identical (based on relevant fields)
+                    if last_entry == second_last_entry:
+                        previous_machineno = MachineMast.objects.filter(SRNO=second_last_entry.SRNO).values_list('machineno',flat=True).first()
+                        previous_machineno = previous_machineno+1;
+                        previous_srnos = MachineMast.objects.filter(machineno=previous_machineno).values_list('SRNO',flat=True).first()
+                        adjusted_punchtime = second_last_entry.PunchDate + timedelta(seconds=30)
+                        exists = MonitorData.objects.filter(
+                            EnrollID=live.EnrollID,
+                            PunchDate=adjusted_punchtime,
+                            SRNO=previous_srnos,
+                            TRID=previous_machineno,
+                            Errorstatus=2
+                            ).exists()
+                        if not exists:
+                            # Get the last id to avoid conflicts
+                            last_id = MonitorData.objects.aggregate(max_id=models.Max('id'))['max_id']
+                            new_id = (last_id or 0) + 1
+                            # Insert the new record into MonitorData
+                            MonitorData.objects.create(
+                                id=new_id,
+                                EnrollID=live.EnrollID,
+                                PunchDate=adjusted_punchtime,
+                                SRNO=previous_srno,
+                                TRID=previous_machineno,
+                                Errorstatus=2  # Mark it as error status
+                            )
 
+        # Check if EnrollID exists and update total counts accordingly
+        if machine and live.EnrollID:
+            # Non-hazard total logic
+            if machine.machineno in ['1', '5']:
+                non_hazard_total += 1
+            elif machine.machineno in ['2', '6']:
+                non_hazard_total -= 1  # Exit means decrease from total
+
+            # Hazard total logic
+            if machine.machineno in ['3', '7','9','11','13']:
+                hazard_total += 1
+            elif machine.machineno in ['4', '8','10','12','14']:
+                hazard_total -= 1  # Exit means decrease from total
+                
+        if non_hazard_in < non_hazard_out:
+            # Get the last "out" machine number and find the corresponding "in" machine
+            last_machine = machine.machineno
+            previous_machine_no = None
+
+            # Check for machines 2 and 6
+            if last_machine == '2':
+                previous_machine_no = '1'
+            elif last_machine == '6':
+                previous_machine_no = '5'
+            enroll_ids = MonitorData.objects.filter(EnrollID=live.EnrollID, PunchDate__date=today).order_by('-id')
+            if enroll_ids.count() >= 2:
+                # Get the second-last entry
+                second_last_entry = enroll_ids[1]
+                
+                # Check if TRID of the second-last entry is in [1, 5]
+                if second_last_entry.TRID in [1, 5]:
+                    # Pass the data (you can handle this part as per your logic)
+                    pass
+                else:
+                    # Print the second-last entry details if TRID condition isn't met
+                    print(f"Second-last entry for EnrollID {live.EnrollID} has TRID={second_last_entry.TRID}, which is not in [1, 5].")
+            else:
+                if previous_machine_no:
+                    previous_srno = MachineMast.objects.filter(machineno=previous_machine_no).values_list('SRNO', flat=True).first()
+                    if previous_srno:
+                        # Generate the new punch date, 30 seconds before the current punch
+                        new_punch_date = live.PunchDate - timedelta(seconds=30)
+
+                        # Check if a similar record already exists to avoid duplicates
+                        record_exists = MonitorData.objects.filter(
+                            EnrollID=live.EnrollID,
+                            PunchDate=new_punch_date,
+                            SRNO=previous_srno,
+                            TRID=previous_machine_no,
+                            Errorstatus=1
+                        ).exists()
+                            
+
+                        if not record_exists:
+                            try:
+                                with transaction.atomic():
+                                    last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id']
+                                    new_id = (last_id or 0) + 1
+
+                                        # Create a new record in the database
+                                    MonitorData.objects.create(
+                                        id=new_id,
+                                        EnrollID=live.EnrollID,
+                                        PunchDate=new_punch_date,
+                                        SRNO=previous_srno,
+                                        TRID=previous_machine_no,
+                                        Errorstatus=1  # Marking it as an error entry
+                                    )
+
+                            except Exception as e:
+                                 
+                                print(f"Error while creating a new record: {e}")
+            # After inserting, update the "in" count and recalculate
+            if previous_machine_no in ['1', '5']:
+                non_hazard_in += 1
+
+        # Check if hazard_in_count is less than hazard_out_count
+        if hazardincount < hazardoutcount:
+            last_machine = machine.machineno
+            previous_machine_no = None
+            if last_machine == '4':
+                previous_machine_no = '3'
+            elif last_machine == '8':
+                previous_machine_no = '7'
+            elif last_machine == '10':
+                previous_machine_no = '9'
+            elif last_machine == '12':
+                previous_machine_no = '11'
+            elif last_machine == '14':
+                previous_machine_no = '13'
+            enroll_ids = MonitorData.objects.filter(EnrollID=live.EnrollID, PunchDate__date=today).order_by('-id')
+            if enroll_ids.count() >= 2:
+                # Get the second-last entry
+                second_last_entry = enroll_ids[1]
+                
+                # Check if TRID of the second-last entry is in [1, 5]
+                if second_last_entry.TRID in [3, 7, 9, 11, 13]:
+                    # Pass the data (you can handle this part as per your logic)
+                    pass
+                else:
+                    # Print the second-last entry details if TRID condition isn't met
+                    print(f"Second-last entry for EnrollID {live.EnrollID} has TRID={second_last_entry.TRID}, which is not in [1, 5].")
+            else:
+                if previous_machine_no:
+                    previous_srno = MachineMast.objects.filter(machineno=previous_machine_no).values_list('SRNO', flat=True).first()
+                    if previous_srno:
+                        # Generate the new punch date, 30 seconds before the current punch
+                        new_punch_date = live.PunchDate - timedelta(seconds=30)
+
+                        # Check if a similar record already exists to avoid duplicates
+                        record_exists = MonitorData.objects.filter(
+                            EnrollID=live.EnrollID,
+                            PunchDate=new_punch_date,
+                            SRNO=previous_srno,
+                            TRID=previous_machine_no,
+                            Errorstatus=1
+                        ).exists()
+
+                        if not record_exists:
+                            try:
+                                # Use an atomic transaction to ensure data integrity
+                                with transaction.atomic():
+                                    # Retrieve the highest ID from MonitorData
+                                    last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id']
+                                    new_id = (last_id or 0) + 1
+
+                                    # Create a new record in the database
+                                    MonitorData.objects.create(
+                                        id=new_id,
+                                        EnrollID=live.EnrollID,
+                                        PunchDate=new_punch_date,
+                                        SRNO=previous_srno,
+                                        TRID=previous_machine_no,
+                                        Errorstatus=1  # Marking it as an error entry
+                                    )
+                            except Exception as e:
+                                # Log the error for debugging
+                                print(f"Error while creating a new record: {e}")
+                        
+
+            if previous_machine_no in ['3', '7']:
+                hazard_in_count += 1
+            if previous_machine_no in ['9']:
+                wagen_in_count += 1
+            if previous_machine_no in ['11', '13']:
+                tank_in_count += 1
+
+        # Check wagen counts
+    # Final calculations if needed, e.g., total headcount calculations
+    total_non_hazard_head_count = non_hazard_in - non_hazard_out
+    hazardincount = hazard_in_count + wagen_in_count + tank_in_count
+    hazardoutcount = hazard_out_count+wagen_out_count+tank_out_count
     return JsonResponse({
         'live_data': data,
         'hazard_in_count': hazard_in_count,
         'hazard_out_count': hazard_out_count,
-        'hazard_total': hazard_in_count - hazard_out_count,
+        'hazard_total': hazardincount - hazardoutcount,
         'non_hazard_in': non_hazard_in,
         'non_hazard_out': non_hazard_out,
         'non_hazard_total': non_hazard_in - non_hazard_out,
+        'wagen_in': wagen_in_count,
+        'wagen_out': wagen_out_count,
+       
+        'tank_in': tank_in_count,
+        'tank_out': tank_out_count,
+
     })
 
 

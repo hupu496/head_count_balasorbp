@@ -268,6 +268,34 @@ display: block;
 <!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
 <script src="{% static 'js/plugins/choices.min.js' %}"></script>
 <script type="text/javascript">
+    // Get the current time
+    const now = new Date();
+
+    // Set the target refresh time to 12:00 AM
+    const midnight = new Date();
+    midnight.setHours(0, 0, 0, 0); // Set to 12:00 AM of today
+
+    // Set the stop refresh time to 12:01 AM
+    const stopRefreshTime = new Date();
+    stopRefreshTime.setHours(0, 1, 0, 0); // Set to 12:01 AM of today
+
+    // Check if the current time is before 12:01 AM
+    if (now < stopRefreshTime) {
+        const timeUntilMidnight = midnight - now;
+
+        // Only set a timeout if the current time is before 12:01 AM
+        if (timeUntilMidnight > 0) {
+            setTimeout(() => {
+                location.reload();
+            }, timeUntilMidnight);
+        } else {
+            console.log("It's already past midnight; no refresh will occur.");
+        }
+    } else {
+        console.log("It's already 12:01 AM or later; no refresh will occur.");
+    }
+</script>
+<script type="text/javascript">
    setInterval(function() {
      $.ajax({
          url: "{% url 'home' %}",
