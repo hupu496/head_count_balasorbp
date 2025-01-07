@@ -382,6 +382,7 @@ def live_data(request):
                 'RESEND_SERVER': row[6],
             }
             # Avoid duplicates
+             # Check if a record with the same EnrollID, PunchDate, and SRNO already exists
             exists = MonitorData.objects.filter(
                 EnrollID=data_dict['EnrollID'],
                 PunchDate=data_dict['PunchDate'],
@@ -402,7 +403,7 @@ def live_data(request):
                     }
             )
                 print(f"New MonitorData created: {data_dict['EnrollID']}")
-    # livedata = MonitorData.objects.all().order_by('-id')[:10]
+
     livedata = MonitorData.objects.filter(PunchDate__date=request.session['selected_date']).order_by('-id')[:13]
     srnos = livedata.values_list('SRNO', flat=True)
     enrollids = livedata.values_list('EnrollID', flat=True)
@@ -430,10 +431,7 @@ def live_data(request):
 
     # Initialize all counts
     hazard_in_count = hazard_out_count = 0
-    hazardincount = hazardoutcount = 0
     non_hazard_in = non_hazard_out = 0
-    wagen_in_count = wagen_out_count = 0
-    tank_in_count = tank_out_count = 0
     non_hazard_total = hazard_total = 0
     for live in monitor_data:
         machine = MachineMast.objects.filter(SRNO=live.SRNO).first()
@@ -446,30 +444,15 @@ def live_data(request):
                 hazard_in_count += 1
             elif machine.machineno in ['4', '8']:  # Hazard Out
                 hazard_out_count += 1
-            elif machine.machineno == '9':  # Wagen In
-                wagen_in_count += 1
-            elif machine.machineno == '10':  # Wagen Out
-                wagen_out_count += 1
-            elif machine.machineno in ['11', '13']:  # Tank In
-                tank_in_count += 1
-            elif machine.machineno in ['12', '14']:  # Tank Out
-                tank_out_count += 1
-            
-        hazardincount = hazard_in_count+wagen_in_count+tank_in_count
-           
-        hazardoutcount = hazard_out_count+wagen_out_count+tank_out_count
-       
-            #out console entry 
         if machine and live.EnrollID:  # out console auto entry 
-            if machine.machineno in ['1', '5']:
+            if machine.machineno in ['1','5']:
                 # Fetch the SRNO for the previous machine number (if needed)
                 current_Srno = MachineMast.objects.filter(machineno=machine.machineno).values_list('SRNO', flat=True).first()
                 # Fetch the last two records for the given SRNO and EnrollID
-                last_two_entries = MonitorData.objects.filter(SRNO=current_Srno, EnrollID=live.EnrollID, PunchDate=today).order_by('-PunchDate')[:2]
+                last_two_entries = MonitorData.objects.filter(SRNO=current_Srno, EnrollID=live.EnrollID).order_by('-PunchDate')[:2]
                 if len(last_two_entries) == 2:
                     last_entry = last_two_entries[0]
                     second_last_entry = last_two_entries[1]
-                   
                     # Check if the last two entries are identical (based on relevant fields)
                     if last_entry == second_last_entry:
                         previous_machineno = MachineMast.objects.filter(SRNO=second_last_entry.SRNO).values_list('machineno',flat=True).first()
@@ -497,15 +480,14 @@ def live_data(request):
                                 Errorstatus=2  # Mark it as error status
                             )
         if machine and live.EnrollID:  # out console auto entry 
-            if machine.machineno in ['3','7','9','11','13']:
+            if machine.machineno in ['3','7']:
                 # Fetch the SRNO for the previous machine number (if needed)
                 current_Srno = MachineMast.objects.filter(machineno=machine.machineno).values_list('SRNO', flat=True).first()
                 # Fetch the last two records for the given SRNO and EnrollID
-                last_two_entries = MonitorData.objects.filter(SRNO=current_Srno, EnrollID=live.EnrollID, PunchDate=today).order_by('-PunchDate')[:2]
+                last_two_entries = MonitorData.objects.filter(SRNO=current_Srno, EnrollID=live.EnrollID).order_by('-PunchDate')[:2]
                 if len(last_two_entries) == 2:
                     last_entry = last_two_entries[0]
                     second_last_entry = last_two_entries[1]
-                   
                     # Check if the last two entries are identical (based on relevant fields)
                     if last_entry == second_last_entry:
                         previous_machineno = MachineMast.objects.filter(SRNO=second_last_entry.SRNO).values_list('machineno',flat=True).first()
@@ -533,8 +515,9 @@ def live_data(request):
                                 Errorstatus=2  # Mark it as error status
                             )
 
+
         # Check if EnrollID exists and update total counts accordingly
-        if machine and live.EnrollID:
+        if live.EnrollID:
             # Non-hazard total logic
             if machine.machineno in ['1', '5']:
                 non_hazard_total += 1
@@ -542,11 +525,11 @@ def live_data(request):
                 non_hazard_total -= 1  # Exit means decrease from total
 
             # Hazard total logic
-            if machine.machineno in ['3', '7','9','11','13']:
+            if machine.machineno in ['3', '7']:
                 hazard_total += 1
-            elif machine.machineno in ['4', '8','10','12','14']:
+            elif machine.machineno in ['4', '8']:
                 hazard_total -= 1  # Exit means decrease from total
-                
+            # If the EnrollID is in an "out" machine, check for the last entry
         if non_hazard_in < non_hazard_out:
             # Get the last "out" machine number and find the corresponding "in" machine
             last_machine = machine.machineno
@@ -609,27 +592,23 @@ def live_data(request):
             if previous_machine_no in ['1', '5']:
                 non_hazard_in += 1
 
+
         # Check if hazard_in_count is less than hazard_out_count
-        if hazardincount < hazardoutcount:
+        if hazard_in_count < hazard_out_count:
             last_machine = machine.machineno
             previous_machine_no = None
+            
             if last_machine == '4':
                 previous_machine_no = '3'
             elif last_machine == '8':
                 previous_machine_no = '7'
-            elif last_machine == '10':
-                previous_machine_no = '9'
-            elif last_machine == '12':
-                previous_machine_no = '11'
-            elif last_machine == '14':
-                previous_machine_no = '13'
             enroll_ids = MonitorData.objects.filter(EnrollID=live.EnrollID, PunchDate__date=today).order_by('-id')
             if enroll_ids.count() >= 2:
                 # Get the second-last entry
                 second_last_entry = enroll_ids[1]
                 
                 # Check if TRID of the second-last entry is in [1, 5]
-                if second_last_entry.TRID in [3, 7, 9, 11, 13]:
+                if second_last_entry.TRID in [3, 7]:
                     # Pass the data (you can handle this part as per your logic)
                     pass
                 else:
@@ -675,30 +654,18 @@ def live_data(request):
 
             if previous_machine_no in ['3', '7']:
                 hazard_in_count += 1
-            if previous_machine_no in ['9']:
-                wagen_in_count += 1
-            if previous_machine_no in ['11', '13']:
-                tank_in_count += 1
-
-        # Check wagen counts
     # Final calculations if needed, e.g., total headcount calculations
     total_non_hazard_head_count = non_hazard_in - non_hazard_out
-    hazardincount = hazard_in_count + wagen_in_count + tank_in_count
-    hazardoutcount = hazard_out_count+wagen_out_count+tank_out_count
+    total_hazard_head_count = hazard_in_count - hazard_out_count
+
     return JsonResponse({
         'live_data': data,
         'hazard_in_count': hazard_in_count,
         'hazard_out_count': hazard_out_count,
-        'hazard_total': hazardincount - hazardoutcount,
+        'hazard_total': hazard_in_count - hazard_out_count,
         'non_hazard_in': non_hazard_in,
         'non_hazard_out': non_hazard_out,
         'non_hazard_total': non_hazard_in - non_hazard_out,
-        'wagen_in': wagen_in_count,
-        'wagen_out': wagen_out_count,
-       
-        'tank_in': tank_in_count,
-        'tank_out': tank_out_count,
-
     })
 
 
