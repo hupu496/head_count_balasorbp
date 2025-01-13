@@ -46,7 +46,20 @@ display: block;
  .text-success {
     color: #2d332d !important;
 }
-
+ .carousel-item {
+            background-color: #43A047;
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .item2 {
+            background-color: #F44335;
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
 
 {% endblock css %}
 {% block title %} IOCL | Head Count System {% endblock title %}
@@ -143,16 +156,53 @@ display: block;
                         <hr class="vertical dark">
                      </div>
                      <div class="col-md-3 position-relative">
-                        <div class="p-3 text-center">
-                           <h1 class="text-gradient text-primary" style="
-    font-size: 69px;"><i class="fas fa-users"></i></h1>
-                           <h5 class="mt-3" style="font-size: 30px;">TOTAL HEAD COUNT</h5>
-                           <a href="list/MAIN GATE TOTAL HEAD COUNT" target="_blank" class="btn btn-icon btn-2 bg-gradient-success" style="width: 145px;margin-top:13px;height: 60px;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);">
-                           <b style="font-size: 30px;" id="non-hazard-total">{{ non_hazard_total }}</b>
-                           </a>
-                        </div>
-                        <hr class="vertical dark">
-                     </div>
+    <div class="p-3 text-center">
+        <h1 class="text-gradient text-primary" style="font-size: 69px;"><i class="fas fa-users"></i></h1>
+        <h5 class="mt-3" style="font-size: 30px;">TOTAL HEAD COUNT</h5>
+        <a href="list/MAIN GATE TOTAL HEAD COUNT" target="_blank" class="btn btn-icon btn-2 bg-gradient-success" style="width: 145px;margin-top:13px;height: 60px;box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);">
+            <b style="font-size: 30px;" id="non-hazard-total">{{ non_hazard_total }}</b>
+        </a>
+    </div>
+    <hr class="vertical dark">
+    <div id="carouselOne" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner" id="carouselOneItems"></div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselOne" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselOne" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+
+   
+<!--     <div style="background-color: #43A047; border-radius: 10px;">
+       
+        <table id="myTable" class="table data-table stripe hover nowrap align-items-center mb-0 display text-center text-white">
+            <thead>
+                <tr>
+                    <th scope="col" style="color: white;">Department</th>
+                    <th scope="col" style="color: white;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                   
+                    <td style="
+    color: white;
+">Security</td>
+                    <td style="
+    color: white;
+">0</td>
+                    
+                </tr>
+                
+            </tbody>
+        </table>
+        
+    </div> -->
+</div>
                      <div class="col-md-3 position-relative">
                         <div class="p-3 text-center">
                            <h1 class="text-gradient text-primary"style="
@@ -203,6 +253,17 @@ display: block;
                            </a>
                         </div>
                         <hr class="vertical dark">
+                  <div id="carouselTwo" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner" id="carouselTwoItems"></div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselTwo" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselTwo" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
                      </div>
                      <div class="col-md-3 position-relative">
                         <div class="p-3 text-center">
@@ -267,6 +328,55 @@ display: block;
 <script src="{% static 'js/plugins/tilt.min.js' %}"></script>
 <!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
 <script src="{% static 'js/plugins/choices.min.js' %}"></script>
+ <!-- JavaScript to Dynamically Add Carousel Items Non Hazardous -->
+    <script>
+        // Data for the carousel
+        const departments = [
+            { name: "Security", total: 0 },
+            { name: "PMCC", total: 5 },
+            { name: "Officer", total: 3 },
+            { name: "Maintenance", total: 8 }
+        ];
+
+        // Data for Carousel 2
+        const projects = [
+            { name: "Security", total: 0 },
+            { name: "PMCC", total: 5 },
+            { name: "Officer", total: 3 },
+            { name: "Maintenance", total: 8 }
+        ];
+
+        // Populate Carousel 1
+        const carouselOneItems = document.getElementById("carouselOneItems");
+        departments.forEach((department, index) => {
+            const isActive = index === 0 ? "active" : "";
+            const carouselItem = `
+                <div class="carousel-item ${isActive}">
+                    <h3 class="text-white">${department.name}</h3>
+                    <p style="font-weight:800;">Total: ${department.total}</p>
+                </div>
+            `;
+            carouselOneItems.innerHTML += carouselItem;
+        });
+
+        // Populate Carousel 2
+        const carouselTwoItems = document.getElementById("carouselTwoItems");
+        projects.forEach((project, index) => {
+            const isActive = index === 0 ? "active" : "";
+            const carouselItem = `
+                <div class="carousel-item item2 ${isActive}">
+                    <h3 class="text-white">${project.name}</h3>
+                    <p style="font-weight:800;">Total: ${project.total}</p>
+                </div>
+            `;
+            carouselTwoItems.innerHTML += carouselItem;
+        });
+    </script>
+
+    <!-- Bootstrap JS -->
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"
+    ></script>
 <script type="text/javascript">
     // Get the current time
     const now = new Date();
