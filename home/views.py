@@ -89,6 +89,7 @@ def home(request):
     machnes = MachineMast.objects.filter(SRNO__in=srnos)
     enrolls = EnrollMast.objects.filter(enrollid__in=enrollids)
     employees = EmpMast.objects.filter(enrollid__in=enrolls)
+    departments = DepartMast.objects.all()
 
     machine_dict = {machine.SRNO: machine for machine in machnes}
     enroll_dict = {enroll.enrollid: enroll for enroll in enrolls}
@@ -104,9 +105,52 @@ def home(request):
             'machine': machine,
             'employee': employeedata
         })
-    
-    monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
+    # Prepare data by gates
+    gate_data = {
+        'main_gate': [],
+        'gate3': [],
+        
+    }
 
+    min_ids = []
+    mout_ids = []
+    gin_ids = []
+    gout_ids = []
+
+    # Identify IN and OUT ids based on machine number
+    for live in livedata:
+        machine = machine_dict.get(live.SRNO)
+        if machine:
+            if machine.machineno in ['1', '5']:
+                min_ids.append(live.EnrollID)
+            elif machine.machineno in ['2', '6']:
+                mout_ids.append(live.EnrollID)
+            elif machine.machineno in ['3', '7']:
+                gin_ids.append(live.EnrollID)
+            elif machine.machineno in ['4', '8']:
+                gout_ids.append(live.EnrollID)
+    print(gin_ids,"out",gout_ids)
+   
+    # Populate gate-specific data
+    for live in livedata:
+        machine = machine_dict.get(live.SRNO)
+        if not machine:
+            continue
+
+        enroll_data = enroll_dict.get(live.EnrollID)
+        employeedata = employee_dict.get(enroll_data) if enroll_data else None
+
+        employee_info = {
+            'empcode': employeedata.empcode if employeedata else None,
+            'department': employeedata.department.DepartName if employeedata else None
+        }
+
+        if live.EnrollID in min_ids and live.EnrollID not in mout_ids:
+            gate_data['main_gate'].append({'monitor': live, 'machine': machine, 'employee': employee_info})
+        elif live.EnrollID in gin_ids and live.EnrollID not in gout_ids:
+            gate_data['gate3'].append({'monitor': live, 'machine': machine, 'employee': employee_info})
+    monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
+    
     # Initialize all counts
     hazard_in_count = hazard_out_count = 0
     non_hazard_in = non_hazard_out = 0
@@ -337,8 +381,10 @@ def home(request):
     total_hazard_head_count = hazard_in_count - hazard_out_count
     
     context = {
-        'form': form,
+        'gate_data': gate_data,
+        'departments': departments,
         'data': data,
+        'form':form,
         'is_today': is_today,
         'form_valid': form_valid,
         'selected_date': selected_date,
