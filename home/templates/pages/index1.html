@@ -359,11 +359,11 @@ display: block;
 
     // Set the target refresh time to 12:00 AM
     const midnight = new Date();
-    midnight.setHours(0, 0, 0, 0); // Set to 12:00 AM of today
+    midnight.setHours(1, 0, 0, 0); // Set to 12:00 AM of today
 
     // Set the stop refresh time to 12:01 AM
     const stopRefreshTime = new Date();
-    stopRefreshTime.setHours(0, 1, 0, 0); // Set to 12:01 AM of today
+    stopRefreshTime.setHours(1, 5, 0, 0); // Set to 12:01 AM of today
 
     // Check if the current time is before 12:01 AM
     if (now < stopRefreshTime) {
