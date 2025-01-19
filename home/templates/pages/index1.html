@@ -81,6 +81,27 @@ display: block;
                     console.log(data.error || 'No data received');
                     return;
                 }
+                 // Update department-wise counts for non-hazardous
+                 var nonHazardousHtml = "";
+                    data.non_hazardous.forEach(function (item) {
+                        nonHazardousHtml += `
+                            <tr>
+                                <td style="color: white;">${item.Department}</td>
+                                <td style="color: white;">${item.HeadCount}</td>
+                            </tr>`;
+                    });
+                    $("#non-hazardous-table tbody").html(nonHazardousHtml);
+
+                    // Update department-wise counts for hazardous
+                    var hazardousHtml = "";
+                    data.hazardous.forEach(function (item) {
+                        hazardousHtml += `
+                            <tr>
+                                <td style="color: white;">${item.Department}</td>
+                                <td style="color: white;">${item.HeadCount}</td>
+                            </tr>`;
+                    });
+                    $("#hazardous-table tbody").html(hazardousHtml);
 
                 // Update counts
                 $('#hazard-in').text(data.hazard_in_count);
@@ -89,6 +110,9 @@ display: block;
                 $('#non-hazard-in').text(data.non_hazard_in);
                 $('#non-hazard-out').text(data.non_hazard_out);
                 $('#non-hazard-total').text(data.non_hazard_total);
+                $('#non_hazardous').text(data.non_hazardous);
+                $('#hazardous').text(data.non_hazardous);
+                
 
                 // Update live data
                 var liveDataHtml = '';
@@ -165,39 +189,27 @@ display: block;
     </div>
     <hr class="vertical dark">
      <div style="background-color: #43A047; border-radius: 10px;">
-         {% for gate, entries in gate_data.items %}
-         {% if gate|lower == "main_gate" %}
-        <table id="myTable" class="table data-table stripe hover nowrap align-items-center mb-0 display text-center text-white">
+        
+        <table id="non-hazardous-table">
             <thead>
                 <tr>
-                   
-                </tr>;
+                    <!-- <th>Department</th>
+                    <th>Hazard In</th>
+                    <th>Hazard Out</th>
+                    <th>Non-Hazard In</th>
+                    <th>Non-Hazard Out</th> -->
+                </tr>
             </thead>
             <tbody>
-                {% for department in departments %}
-        <tr>
-            <td>
-                <h6 class="mb-0 text-xs">{{ department.DepartName }}</h6>
-            </td>
-            <td>
-                {% with count=0 %}
-                    {% for entry in entries %}
-                        {% if entry.employee.department == department.DepartName %}
-                          {% if forloop.last %}
-                        <p class="text-xs font-weight-bold mb-0 green-section">{{ forloop.counter }}</p>
-                        {% endif %}
-                           
-                        {% endif %}
-                    {% endfor %}
-                {% endwith %}
-            </td>
-        </tr>
-        
-        {% endfor %}
+                {% for data in non_hazardous %}
+                <tr>
+                    <td style="color: white;">{{ data.Department }}</td>
+                    <td style="color: white;">:{{ data.HeadCount }}</td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
-        {% endif %}
-         {% endfor %}
+       
         
     </div>
 </div>
@@ -252,41 +264,26 @@ display: block;
                         </div>
                         <hr class="vertical dark">
                       <div style="background-color: #F44335; border-radius: 10px;">
-        {% for gate, entries in gate_data.items %}
-          {% if gate|lower == "gate3" %}
-        <table id="myTable" class="table data-table stripe hover nowrap align-items-center mb-0 display text-center text-white">
-            <thead>
-                <tr>
-                   
-                </tr>;
-            </thead>
-            <tbody>
-                {% for department in departments %}
-        <tr>
-            <td>
-                <h6 class="mb-0 text-xs">{{ department.DepartName }}</h6>
-            </td>
-            <td>
-                {% with count=0 %}
-                    {% for entry in entries %}
-                        {% if entry.employee.department == department.DepartName %}
-                          {% if forloop.last %}
-           <p class="text-xs font-weight-bold mb-0 green-section">{{ forloop.counter }}</p>
-                 {% endif %}
-                           
-                        {% endif %}
-                    {% endfor %}
-                   
-                {% endwith %}
-            </td>
-        </tr>
         
+                        <table id="hazardous-table">
+                            <thead>
+                                <tr>
+                                    <!-- <th>Department</th>
+                                    <th>Hazard In</th>
+                                    <th>Hazard Out</th>
+                                    <th>Non-Hazard In</th>
+                                    <th>Non-Hazard Out</th> -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in hazardous %}
+        <tr>
+            <td style="color: white;">{{ data.Department }}</td>
+            <td style="color: white;">{{ data.HeadCount }}</td>
+        </tr>
         {% endfor %}
-            </tbody>
-        </table>
-        {% endif %}
-         {% endfor %}
-        }
+                            </tbody>
+                        </table>
     </div>
                      </div>
                      <div class="col-md-3 position-relative">
