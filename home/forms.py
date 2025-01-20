@@ -30,10 +30,12 @@ class EmpForm(forms.ModelForm):
         fields = ['empcode','Name']
 
 class DateForm(forms.Form):
+    
     selected_date = forms.DateField(
-        initial=datetime.date.today,widget=forms.DateInput(attrs={
+        initial=datetime.date.today,  # Default value set to today's date
+        widget=forms.DateInput(attrs={
             'type': 'date',
-            'style': 'height: 35px; font-size: 20px; padding: 5px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 40px; margin-top:-10px;'
+            'style': 'height: 35px; font-size: 20px; padding: 5px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 40px; margin-top: -10px;'
         })
     )
 

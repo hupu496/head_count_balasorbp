@@ -82,27 +82,20 @@ display: block;
                     return;
                 }
                  // Update department-wise counts for non-hazardous
-                 var nonHazardousHtml = "";
+                            var nonHazardousHtml = `<tr  style="font-size: 13px;">`;
                     data.non_hazardous.forEach(function (item) {
-                        nonHazardousHtml += `
-                            <tr>
-                                <td style="color: white;">${item.Department}</td>
-                                <td style="color: white;">${item.HeadCount}</td>
-                            </tr>`;
+                        nonHazardousHtml += `<td style="color: white;">${item.HeadCount}</td>`;
                     });
+                    nonHazardousHtml += `</tr>`;
                     $("#non-hazardous-table tbody").html(nonHazardousHtml);
 
-                    // Update department-wise counts for hazardous
-                    var hazardousHtml = "";
+                    // Update hazardous table
+                    var hazardousHtml = `<tr  style="font-size: 13px;">`;
                     data.hazardous.forEach(function (item) {
-                        hazardousHtml += `
-                            <tr>
-                                <td style="color: white;">${item.Department}</td>
-                                <td style="color: white;">${item.HeadCount}</td>
-                            </tr>`;
+                        hazardousHtml += `<td style="color: white;">${item.HeadCount}</td>`;
                     });
+                    hazardousHtml += `</tr>`;
                     $("#hazardous-table tbody").html(hazardousHtml);
-
                 // Update counts
                 $('#hazard-in').text(data.hazard_in_count);
                 $('#hazard-out').text(data.hazard_out_count);
@@ -190,23 +183,20 @@ display: block;
     <hr class="vertical dark">
      <div style="background-color: #43A047; border-radius: 10px;">
         
-        <table id="non-hazardous-table">
+        <table id="non-hazardous-table" style="background-color: #43A047; border-radius: 10px; width: 100%; text-align: center;">
             <thead>
-                <tr>
-                    <!-- <th>Department</th>
-                    <th>Hazard In</th>
-                    <th>Hazard Out</th>
-                    <th>Non-Hazard In</th>
-                    <th>Non-Hazard Out</th> -->
+                <tr style="font-size: 13px;">
+                    {% for data in non_hazardous %}
+                        <th style="color: white; padding: 5px 7px;">{{ data.Department }}</th>
+                    {% endfor %}
                 </tr>
             </thead>
-            <tbody>
-                {% for data in non_hazardous %}
-                <tr>
-                    <td style="color: white;">{{ data.Department }}</td>
-                    <td style="color: white;">:{{ data.HeadCount }}</td>
+             <tbody>
+                <tr style="font-size: 13px;">
+                    {% for data in non_hazardous %}
+                        <td style="color: white;">{{ data.HeadCount }}</td>
+                    {% endfor %}
                 </tr>
-                {% endfor %}
             </tbody>
         </table>
        
@@ -265,23 +255,20 @@ display: block;
                         <hr class="vertical dark">
                       <div style="background-color: #F44335; border-radius: 10px;">
         
-                        <table id="hazardous-table">
+                        <table id="hazardous-table" style="background-color: #F44335; border-radius: 10px; width: 100%; text-align: center;">
                             <thead>
-                                <tr>
-                                    <!-- <th>Department</th>
-                                    <th>Hazard In</th>
-                                    <th>Hazard Out</th>
-                                    <th>Non-Hazard In</th>
-                                    <th>Non-Hazard Out</th> -->
+                                <tr  style="font-size: 13px;" >
+                                    {% for data in hazardous %}
+                                        <th style="color: white; padding: 5px 7px;">{{ data.Department }}</th>
+                                    {% endfor %}
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for data in hazardous %}
-        <tr>
-            <td style="color: white;">{{ data.Department }}</td>
-            <td style="color: white;">{{ data.HeadCount }}</td>
-        </tr>
-        {% endfor %}
+                                <tr  style="font-size: 13px;">
+                                    {% for data in hazardous %}
+                                        <td style="color: white;">{{ data.HeadCount }}</td>
+                                    {% endfor %}
+                                </tr>
                             </tbody>
                         </table>
     </div>
