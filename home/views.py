@@ -1148,7 +1148,7 @@ def enroll_mast(request):
             department = DepartMast.objects.get(DepartId=DepartId)
             
             # Check if DepartId is '1' (or any specific condition)
-            if DepartId == '1':
+            if DepartId in ['1', '2']:
                 enrollid = request.POST.get('enrollid')  # Get enrollid instead of from/to
                 if not EnrollMast.objects.filter(enrollid=enrollid).exists():
                     enrollmast = EnrollMast(enrollid=enrollid, department=department)
