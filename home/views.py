@@ -650,20 +650,15 @@ def live_data(request):
             hazardous_departments[department_name] -= 1
           
 
-    # Compute totals
-    total_non_hazard_head_count = non_hazard_in - non_hazard_out
-    total_hazard_head_count = hazard_in_count - hazard_out_count
+        non_hazardous_data = [
+            {"Department": dept, "HeadCount": max(0, non_hazardous_departments.get(dept, 0))}
+            for dept in all_departments
+        ]
 
-    # Create context lists ensuring all departments are included
-    non_hazardous_data = [
-        {"Department": dept, "HeadCount": max(0, non_hazardous_departments.get(dept, 0))}
-        for dept in all_departments
-    ]
-
-    hazardous_data = [
-        {"Department": dept, "HeadCount": max(0, hazardous_departments.get(dept, 0))}
-        for dept in all_departments
-    ]
+        hazardous_data = [
+            {"Department": dept, "HeadCount": max(0, hazardous_departments.get(dept, 0))}
+            for dept in all_departments
+        ]
 
     return JsonResponse({
         'live_data': data,

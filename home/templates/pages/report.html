@@ -283,12 +283,13 @@
             }
           }
         });
-      }
+      }9
     });
   });
 </script>
 <script>
-  document.title = `IOCL | Head Count System | ${new Date().toLocaleDateString('en-US', {
+  const selectedDate = new Date("{{ selected_date|date:'Y-m-d' }}");
+  document.title = `IOCL | Head Count System | ${selectedDate.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'

@@ -65,7 +65,7 @@ display: block;
 {% block title %} IOCL | Head Count System {% endblock title %}
 {% block body %} class="index-page bg-gray-200" {% endblock body %}
 {% block content %}
- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript">
    $(document).ready(function () {
     var ajaxInterval;
@@ -81,10 +81,20 @@ display: block;
                     console.log(data.error || 'No data received');
                     return;
                 }
-                 // Update department-wise counts for non-hazardous
-                            var nonHazardousHtml = `<tr  style="font-size: 13px;">`;
+                
+                // Update counts
+                $('#hazard-in').text(data.hazard_in_count);
+                $('#hazard-out').text(data.hazard_out_count);
+                $('#hazard-total').text(data.hazard_total);
+                $('#non-hazard-in').text(data.non_hazard_in);
+                $('#non-hazard-out').text(data.non_hazard_out);
+                $('#non-hazard-total').text(data.non_hazard_total);
+              
+                
+               // Update department-wise counts for non-hazardous
+                    var nonHazardousHtml = `<tr  style="font-size: 13px;">`;
                     data.non_hazardous.forEach(function (item) {
-                        nonHazardousHtml += `<td style="color: white;">${item.HeadCount}</td>`;
+                    nonHazardousHtml += `<td style="color: white;">${item.HeadCount}</td>`;
                     });
                     nonHazardousHtml += `</tr>`;
                     $("#non-hazardous-table tbody").html(nonHazardousHtml);
@@ -96,17 +106,6 @@ display: block;
                     });
                     hazardousHtml += `</tr>`;
                     $("#hazardous-table tbody").html(hazardousHtml);
-                // Update counts
-                $('#hazard-in').text(data.hazard_in_count);
-                $('#hazard-out').text(data.hazard_out_count);
-                $('#hazard-total').text(data.hazard_total);
-                $('#non-hazard-in').text(data.non_hazard_in);
-                $('#non-hazard-out').text(data.non_hazard_out);
-                $('#non-hazard-total').text(data.non_hazard_total);
-                $('#non_hazardous').text(data.non_hazardous);
-                $('#hazardous').text(data.non_hazardous);
-                
-
                 // Update live data
                 var liveDataHtml = '';
                 data.live_data.forEach(function (item) {
@@ -128,6 +127,7 @@ display: block;
                 });
 
                 $('#live-data-container').html(liveDataHtml);
+                
             },
             error: function (xhr, status, error) {
                 console.error('Error occurred:', error);
@@ -325,7 +325,6 @@ display: block;
 <!-- <p>{{ context }}</p> -->
 {% endblock content %}
 {% block javascripts %}
-<!--  Plugin for TypedJS, full documentation here: https://github.com/inorganik/CountUp.js -->
 <script src="{% static 'js/plugins/countup.min.js' %}"></script>
 <script src="{% static 'js/plugins/choices.min.js' %}"></script>
 <script src="{% static 'js/plugins/prism.min.js' %}"></script>
@@ -336,21 +335,17 @@ display: block;
 <script src="{% static 'js/plugins/tilt.min.js' %}"></script>
 <!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
 <script src="{% static 'js/plugins/choices.min.js' %}"></script>
-    <!-- Bootstrap JS -->
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"
-    ></script>
 <script type="text/javascript">
     // Get the current time
     const now = new Date();
 
     // Set the target refresh time to 12:00 AM
     const midnight = new Date();
-    midnight.setHours(1, 0, 0, 0); // Set to 12:00 AM of today
+    midnight.setHours(0, 0, 0, 0); // Set to 12:00 AM of today
 
     // Set the stop refresh time to 12:01 AM
     const stopRefreshTime = new Date();
-    stopRefreshTime.setHours(1, 5, 0, 0); // Set to 12:01 AM of today
+    stopRefreshTime.setHours(0, 1, 0, 0); // Set to 12:01 AM of today
 
     // Check if the current time is before 12:01 AM
     if (now < stopRefreshTime) {
@@ -368,17 +363,7 @@ display: block;
         console.log("It's already 12:01 AM or later; no refresh will occur.");
     }
 </script>
-<script type="text/javascript">
-   setInterval(function() {
-     $.ajax({
-         url: "{% url 'home' %}",
-         success: function(data) {
-             // Update the page content without refreshing
-         }
-     });
-   }, 2000);  // Makes an AJAX call every 5 seconds
-   
-</script>
+
 <script type="text/javascript">
    if (document.getElementById('state1')) {
      const countUp = new CountUp('state1', document.getElementById("state1").getAttribute("countTo"));
@@ -405,4 +390,16 @@ display: block;
      };
    }
 </script>
+<script type="text/javascript">
+   setInterval(function() {
+     $.ajax({
+         url: "{% url 'home' %}",
+         success: function(data) {
+             // Update the page content without refreshing
+         }
+     });
+   }, 2000);  // Makes an AJAX call every 5 seconds
+   
+</script>
+ 
 {% endblock javascripts %}
