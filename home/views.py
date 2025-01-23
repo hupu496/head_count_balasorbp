@@ -42,7 +42,7 @@ def home(request):
         request.session['selected_date'] = today.strftime("%Y-%m-%d")
     with pyodbc.connect(
         'Driver={SQL Server};'
-        'Server=DESKTOP-5N7IKQ6;'
+        'Server=DESKTOP-FEURJVI;'
         'Database=DATAIOCL;'
         'Trusted_Connection=yes;'
     ) as conn:
@@ -109,11 +109,14 @@ def home(request):
         })
     # Prepare data by gates
     all_departments = DepartMast.objects.values_list("DepartName", flat=True)
+    monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
+    # Fetch related data
+   
+           
+    # Initialize all counts
     hazard_in_count = hazard_out_count = 0
     non_hazard_in = non_hazard_out = 0
-
-    monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
-
+    non_hazard_total = hazard_total = 0
     for live in monitor_data:
         # Calculate counts for non-hazard and hazard data
         non_in = MonitorData.objects.filter(
@@ -189,7 +192,7 @@ def home(request):
             hazard_in_count += 1
         elif live.TRID in ['4', '8']:
             hazard_out_count += 1
-
+    
     srnos = monitor_data.values_list('SRNO', flat=True)
     machines = MachineMast.objects.filter(SRNO__in=srnos)
     enrollids = monitor_data.values_list('EnrollID', flat=True)
@@ -202,8 +205,10 @@ def home(request):
     non_hazardous_departments = defaultdict(int)
     hazardous_departments = defaultdict(int)
 
+# Define all departments to ensure departments with 0 data are included
     all_departments = [dept.DepartName for dept in DepartMast.objects.all()]
 
+# Calculate department-wise counts for Non-Hazardous and Hazardous areas
     for record in monitor_data:
         machine = machine_dict.get(record.SRNO)
         enroll = enroll_dict.get(record.EnrollID)
@@ -215,19 +220,16 @@ def home(request):
 
         if machine.machineno in ['1', '5','9']:  # Non-hazard In
             non_hazardous_departments[department_name] += 1
-           
+            
         elif machine.machineno in ['2', '6','10']:  # Non-hazard Out
             non_hazardous_departments[department_name] -= 1
             
         elif machine.machineno in ['3', '7']:  # Hazard In
             hazardous_departments[department_name] += 1
            
-           
         elif machine.machineno in ['4', '8']:  # Hazard Out
             hazardous_departments[department_name] -= 1
-
-
-    # Create context lists ensuring all departments are included
+ 
         non_hazardous_data = [
             {"Department": dept, "HeadCount": max(0, non_hazardous_departments.get(dept, 0))}
             for dept in all_departments
@@ -238,7 +240,8 @@ def home(request):
             for dept in all_departments
         ]
     total_non_hazard_head_count = non_hazard_in - non_hazard_out
-    total_hazard_head_count = hazard_in_count - hazard_out_count    
+    total_hazard_head_count = hazard_in_count - hazard_out_count
+        
     context = {
         "non_hazardous": non_hazardous_data,
         "hazardous": hazardous_data,
@@ -273,9 +276,10 @@ def live_data(request):
         is_today = (selected_date == today)
     else:
         request.session['selected_date'] = today.strftime("%Y-%m-%d")
+
     with pyodbc.connect(
         'Driver={SQL Server};'
-        'Server=DESKTOP-5N7IKQ6;'
+        'Server=DESKTOP-FEURJVI;'
         'Database=DATAIOCL;'
         'Trusted_Connection=yes;'
     ) as conn:
@@ -352,7 +356,6 @@ def live_data(request):
         SRNO__in=MachineMast.objects.filter(machineno__in=['2', '6','10']).values_list('SRNO', flat=True),
         PunchDate__date=selected_date,
     ).count()
-    
     all_departments = DepartMast.objects.values_list("DepartName", flat=True)
     monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
     srnos = monitor_data.values_list('SRNO', flat=True)
@@ -367,10 +370,10 @@ def live_data(request):
     non_hazardous_departments = defaultdict(int)
     hazardous_departments = defaultdict(int)
 
-    # Define all departments to ensure departments with 0 data are included
+# Define all departments to ensure departments with 0 data are included
     all_departments = [dept.DepartName for dept in DepartMast.objects.all()]
 
-    # Calculate department-wise counts for Non-Hazardous and Hazardous areas
+# Calculate department-wise counts for Non-Hazardous and Hazardous areas
     for record in monitor_data:
         machine = machine_dict.get(record.SRNO)
         enroll = enroll_dict.get(record.EnrollID)
@@ -379,28 +382,30 @@ def live_data(request):
             continue
 
         department_name = enroll.department.DepartName
+
         if machine.machineno in ['1', '5','9']:  # Non-hazard In
             non_hazardous_departments[department_name] += 1
-            
+           
         elif machine.machineno in ['2', '6','10']:  # Non-hazard Out
             non_hazardous_departments[department_name] -= 1
-           
+            
         elif machine.machineno in ['3', '7']:  # Hazard In
             hazardous_departments[department_name] += 1
-    
+           
         elif machine.machineno in ['4', '8']:  # Hazard Out
             hazardous_departments[department_name] -= 1
-            
+          
         non_hazardous_data = [
             {"Department": dept, "HeadCount": max(0, non_hazardous_departments.get(dept, 0))}
             for dept in all_departments
         ]
+
         hazardous_data = [
             {"Department": dept, "HeadCount": max(0, hazardous_departments.get(dept, 0))}
             for dept in all_departments
         ]
     total_non_hazard_head_count = non_hazard_in - non_hazard_out
-    total_hazard_head_count = hazard_in_count - hazard_out_count 
+    total_hazard_head_count = hazard_in_count - hazard_out_count
 
     return JsonResponse({
         'live_data': data,
@@ -413,6 +418,9 @@ def live_data(request):
         "non_hazardous": non_hazardous_data,
         "hazardous": hazardous_data,
     })
+
+
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -474,6 +482,7 @@ def listss(request, lists):
             employeedata = employee_dict.get(enroll_data)
         else:
             employeedata = None
+       
 
         if employeedata:
             employee_info = {
@@ -514,7 +523,7 @@ def listss(request, lists):
                     'employee': employee_info
                 })
         
-        elif lists =='MAIN GATE TOTAL HEAD COUNT':
+        elif lists == 'MAIN GATE TOTAL HEAD COUNT':
             if (len(min_ids) <= len(mout_ids)):
                 if machine.machineno in ['2', '6','10']:
                     pass
@@ -551,7 +560,7 @@ def listss(request, lists):
                             'employee': employee_info,
                         })
                     
-        elif lists =='GATE3 TOTAL HEAD COUNT':
+        elif lists == 'GATE3 TOTAL HEAD COUNT':
             if (len(gin_ids) <= len(gout_ids)):
                 if machine.machineno in ['4', '8']:
                     pass
@@ -561,8 +570,15 @@ def listss(request, lists):
                     processed_gin_ids = gin_ids.copy()  # Copy gin_ids to track unmatched IDs
                     removed_items, remaining_items = process_ids(gout_ids, processed_gin_ids)
                     enroll_data = remaining_items  # Remove duplicates and sort if needed
+                   
+
+
+                    # Fetch employee data based on enroll_data
+
                     for remainid in enroll_data:  # Iterate over each ID in the single-row output
                         employeedata = EmpMast.objects.filter(empcode=remainid).first()  # Use `first()` to fetch the first matching record
+                       
+
                         if employeedata:
                             employee_info = {
                                 'name': employeedata.Name,
@@ -879,7 +895,7 @@ def enroll_mast(request):
             department = DepartMast.objects.get(DepartId=DepartId)
             
             # Check if DepartId is '1' (or any specific condition)
-            if DepartId in ['1', '2']:
+            if str(DepartId) in ['1', '2']:
                 enrollid = request.POST.get('enrollid')  # Get enrollid instead of from/to
                 if not EnrollMast.objects.filter(enrollid=enrollid).exists():
                     enrollmast = EnrollMast(enrollid=enrollid, department=department)
