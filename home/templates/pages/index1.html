@@ -113,7 +113,7 @@ display: block;
                     var employee = item.employee || {};
                     var colorStyle = '';
 
-                    if (machine.machineno === '1' || machine.machineno === '5' || machine.machineno === '2' || machine.machineno === '6') {
+                    if (machine.machineno === '1' || machine.machineno === '5' || machine.machineno === '2' || machine.machineno === '6' || machine.machineno === '9' || machine.machineno === '10') {
                         colorStyle = 'background-color:#4CAF50; color: white;';
                     } else if (machine.machineno === '3' || machine.machineno === '7' || machine.machineno === '4' || machine.machineno === '8') {
                         colorStyle = 'background-color:#F44335; color: white;';
@@ -304,10 +304,10 @@ display: block;
          <div class="col-md-3 col-12">
              <img src="{% static 'img/notification.png' %}" width="30%" style="margin-top:-148px; margin-left: 100px; text-align: center;">
                 <div id="live-data-container" style="height: 700px;">
-        {% for item in data %}
-            {% if item.machine.machineno == '1' or item.machine.machineno == '5' %}
+            {% for item in data %}
+            {% if item.machine.machineno == '1' or item.machine.machineno == '5' or item.machine.machineno == '9' %}
             <h6 style="background-color:#4CAF50; color: white; padding: 5px; border-radius: 5px;">{{ item.employee.empcode }}&nbsp;{{ item.employee.Name }}&nbsp;&nbsp;&nbsp;&nbsp;{{ item.machine.Name }} {{ item.machine.Response }}</h6>
-            {% elif item.machine.machineno == '2' or item.machine.machineno == '6' %}
+            {% elif item.machine.machineno == '2' or item.machine.machineno == '6' or item.machine.machineno == '10' %}
             <h6 style="background-color:#4CAF50; color: white; padding: 5px; border-radius: 5px;">{{ item.employee.empcode }}&nbsp;{{ item.employee.Name }}&nbsp;&nbsp;&nbsp;&nbsp;{{ item.machine.Name }} {{ item.machine.Response }}</h6>
             {% elif item.machine.machineno == '3' or item.machine.machineno == '7' %}
             <h6 style="background-color:#F44335; color: white; padding: 5px; border-radius: 5px;">{{ item.employee.empcode }}&nbsp;{{ item.employee.Name }}&nbsp;&nbsp;&nbsp;&nbsp;{{ item.machine.Name }}{{ item.machine.Response }}</h6>
@@ -319,8 +319,6 @@ display: block;
             
       </div>
    </div>
-  
-
 </div>
 <!-- <p>{{ context }}</p> -->
 {% endblock content %}
@@ -341,11 +339,11 @@ display: block;
 
     // Set the target refresh time to 12:00 AM
     const midnight = new Date();
-    midnight.setHours(0, 0, 0, 0); // Set to 12:00 AM of today
+    midnight.setHours(1, 0, 0, 0); // Set to 12:00 AM of today
 
     // Set the stop refresh time to 12:01 AM
     const stopRefreshTime = new Date();
-    stopRefreshTime.setHours(0, 1, 0, 0); // Set to 12:01 AM of today
+    stopRefreshTime.setHours(1, 5, 0, 0); // Set to 12:01 AM of today
 
     // Check if the current time is before 12:01 AM
     if (now < stopRefreshTime) {
