@@ -22,6 +22,8 @@ from datetime import timedelta
 from django.db.models import Count
 from collections import defaultdict
 from django.db.models import Q, Count, F
+import logging
+logger = logging.getLogger(__name__)
 
 def home(request):
     if request.session.get('login', None):
@@ -261,163 +263,171 @@ def home(request):
     }
     return render(request, 'pages/index1.html', context)
 def live_data(request):
-    if request.session.get('login', None):
-        return redirect('dashboard')
-    today = timezone.now().date()
-    form = DateForm(initial={"selected_date": today})
-    selected_date = today
-    is_today = True  # Track if the selected date is today
-    form_valid = False
-
-    if form.is_valid():
-        form_valid = True
-        selected_date = form.cleaned_data['selected_date']
-        request.session['selected_date'] = selected_date.strftime("%Y-%m-%d")
-        is_today = (selected_date == today)
-    else:
-        request.session['selected_date'] = today.strftime("%Y-%m-%d")
-
-    with pyodbc.connect(
-        'Driver={SQL Server};'
-        'Server=DESKTOP-FEURJVI;'
-        'Database=DATAIOCL;'
-        'Trusted_Connection=yes;'
-    ) as conn:
-        cursor = conn.cursor()
-        query = "SELECT * FROM MonitorDataTbl WHERE CAST(PunchDate AS DATE) = ?"
-        cursor.execute(query, selected_date.strftime('%Y-%m-%d'))
-        rows = cursor.fetchall()
-        
-        # Process rows and save to MonitorData model
-        for row in rows:
-            data_dict = {
-                'SRNO': row[0],
-                'EnrollID': row[1],
-                'PunchDate': row[2].strftime("%Y-%m-%d %H:%M:%S"),
-                'TRID': row[3],
-                'id': row[4],
-                'SEND_SERVER': row[5],
-                'RESEND_SERVER': row[6],
-            }
-            # Avoid duplicates
-            MonitorData.objects.get_or_create(
-                SRNO=data_dict['SRNO'],
-                EnrollID=data_dict['EnrollID'],
-                PunchDate=data_dict['PunchDate'],
-                defaults={'Errorstatus': '0'}
-            )
-
-    livedata = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')[:13]
-    data = []
-    for live in livedata:
-        machine = MachineMast.objects.filter(SRNO=live.SRNO).first()
-        employee = None
-        enroll = None
-        if live.EnrollID:
-            enroll = EnrollMast.objects.filter(enrollid=live.EnrollID).first()
-            if enroll:
-                employee = EmpMast.objects.filter(enrollid=enroll.id).first()
-        
-        data.append({
-            'monitor': {
-                'SRNO': live.SRNO,
-                'EnrollID': live.EnrollID,
-                'PunchDate': live.PunchDate,
-            },
-            'machine': {
-                'machineno': machine.machineno if machine else None,
-                'Name': machine.Name if machine else None,
-                'Response': machine.Response if machine else None,
-            } if machine else None,
-            'employee': {
-                'empcode': employee.empcode if employee else None,
-                'Name': employee.Name if employee else None,
-            } if employee else None,
-        })
-    
-    # Count hazards and non-hazards
-    all_departments = DepartMast.objects.values_list("DepartName", flat=True)
-    hazard_in_count = MonitorData.objects.filter(
-        SRNO__in=MachineMast.objects.filter(machineno__in=['3', '7']).values_list('SRNO', flat=True),
-        PunchDate__date=selected_date,
-    ).count()
-    
-    hazard_out_count = MonitorData.objects.filter(
-        SRNO__in=MachineMast.objects.filter(machineno__in=['4', '8']).values_list('SRNO', flat=True),
-        PunchDate__date=selected_date,
-    ).count()
-
-    non_hazard_in = MonitorData.objects.filter(
-        SRNO__in=MachineMast.objects.filter(machineno__in=['1', '5','9']).values_list('SRNO', flat=True),
-        PunchDate__date=selected_date,
-    ).count()
-    
-    non_hazard_out = MonitorData.objects.filter(
-        SRNO__in=MachineMast.objects.filter(machineno__in=['2', '6','10']).values_list('SRNO', flat=True),
-        PunchDate__date=selected_date,
-    ).count()
-    all_departments = DepartMast.objects.values_list("DepartName", flat=True)
-    monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
-    srnos = monitor_data.values_list('SRNO', flat=True)
-    machines = MachineMast.objects.filter(SRNO__in=srnos)
-    enrollids = monitor_data.values_list('EnrollID', flat=True)
-    enrolls = EnrollMast.objects.filter(enrollid__in=enrollids).select_related('department')
-    employees = EmpMast.objects.filter(enrollid__in=enrolls)
-    # Lookup dictionaries
-    machine_dict = {machine.SRNO: machine for machine in machines}
-    enroll_dict = {enroll.enrollid: enroll for enroll in enrolls}
-
-    non_hazardous_departments = defaultdict(int)
-    hazardous_departments = defaultdict(int)
-
-# Define all departments to ensure departments with 0 data are included
-    all_departments = [dept.DepartName for dept in DepartMast.objects.all()]
-
-# Calculate department-wise counts for Non-Hazardous and Hazardous areas
-    for record in monitor_data:
-        machine = machine_dict.get(record.SRNO)
-        enroll = enroll_dict.get(record.EnrollID)
-
-        if not machine or not enroll or not enroll.department:
-            continue
-
-        department_name = enroll.department.DepartName
-
-        if machine.machineno in ['1', '5','9']:  # Non-hazard In
-            non_hazardous_departments[department_name] += 1
-           
-        elif machine.machineno in ['2', '6','10']:  # Non-hazard Out
-            non_hazardous_departments[department_name] -= 1
+        try:
+            if request.session.get('login', None):
+                return redirect('dashboard')
             
-        elif machine.machineno in ['3', '7']:  # Hazard In
-            hazardous_departments[department_name] += 1
-           
-        elif machine.machineno in ['4', '8']:  # Hazard Out
-            hazardous_departments[department_name] -= 1
-          
-        non_hazardous_data = [
-            {"Department": dept, "HeadCount": max(0, non_hazardous_departments.get(dept, 0))}
-            for dept in all_departments
-        ]
+            today = timezone.now().date()
+            selected_date = request.session.get('selected_date', today.strftime("%Y-%m-%d"))
+            selected_date = timezone.datetime.strptime(selected_date, "%Y-%m-%d").date()
+            
+            try:
+                with pyodbc.connect(
+                    'Driver={SQL Server};'
+                    'Server=DESKTOP-FEURJVI;'
+                    'Database=DATAIOCL;'
+                    'Trusted_Connection=yes;'
+                ) as conn:
+                    cursor = conn.cursor()
+                    query = "SELECT * FROM MonitorDataTbl WHERE CAST(PunchDate AS DATE) = ?"
+                    cursor.execute(query, selected_date.strftime('%Y-%m-%d'))
+                    rows = cursor.fetchall()
+                    
+                    for row in rows:
+                        try:
+                            data_dict = {
+                                'SRNO': row[0],
+                                'EnrollID': row[1],
+                                'PunchDate': row[2].strftime("%Y-%m-%d %H:%M:%S"),
+                                'TRID': row[3],
+                                'id': row[4],
+                                'SEND_SERVER': row[5],
+                                'RESEND_SERVER': row[6],
+                            }
+                            MonitorData.objects.get_or_create(
+                                SRNO=data_dict['SRNO'],
+                                EnrollID=data_dict['EnrollID'],
+                                PunchDate=data_dict['PunchDate'],
+                                defaults={'Errorstatus': '0'},
+                            )
+                        except Exception as e:
+                            logger.error(f"Error processing row {row}: {e}")
+            except pyodbc.Error as e:
+                logger.error(f"Database connection or query failed: {e}")
+                return JsonResponse({"error": "Database connection failed"}, status=500)
+            try:
+                livedata = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')[:13]
+                data = []
+                for live in livedata:
+                    try:
+                        machine = MachineMast.objects.filter(SRNO=live.SRNO).first()
+                        employee = None
+                        enroll = None
+                        if live.EnrollID:
+                            enroll = EnrollMast.objects.filter(enrollid=live.EnrollID).first()
+                            if enroll:
+                                employee = EmpMast.objects.filter(enrollid=enroll.id).first()
+        
+                        data.append({
+                            'monitor': {
+                                'SRNO': live.SRNO,
+                                'EnrollID': live.EnrollID,
+                                'PunchDate': live.PunchDate,
+                            },
+                            'machine': {
+                                'machineno': machine.machineno if machine else None,
+                                'Name': machine.Name if machine else None,
+                                'Response': machine.Response if machine else None,
+                            } if machine else None,
+                            'employee': {
+                                'empcode': employee.empcode if employee else None,
+                                'Name': employee.Name if employee else None,
+                            } if employee else None,
+                        })
+                    except Exception as e:
+                        logger.error(f"Error processing live data for {live}: {e}")
+            except Exception as e:
+                logger.error(f"Error fetching or processing live data: {e}")
+                return JsonResponse({"error": "Error processing live data"}, status=500)
+            try:
+                # Count hazards and non-hazards
+                all_departments = DepartMast.objects.values_list("DepartName", flat=True)
+                hazard_in_count = MonitorData.objects.filter(
+                    SRNO__in=MachineMast.objects.filter(machineno__in=['3', '7']).values_list('SRNO', flat=True),
+                    PunchDate__date=selected_date,
+                ).count()
+                
+                hazard_out_count = MonitorData.objects.filter(
+                    SRNO__in=MachineMast.objects.filter(machineno__in=['4', '8']).values_list('SRNO', flat=True),
+                    PunchDate__date=selected_date,
+                ).count()
 
-        hazardous_data = [
-            {"Department": dept, "HeadCount": max(0, hazardous_departments.get(dept, 0))}
-            for dept in all_departments
-        ]
-    total_non_hazard_head_count = non_hazard_in - non_hazard_out
-    total_hazard_head_count = hazard_in_count - hazard_out_count
+                non_hazard_in = MonitorData.objects.filter(
+                    SRNO__in=MachineMast.objects.filter(machineno__in=['1', '5','9']).values_list('SRNO', flat=True),
+                    PunchDate__date=selected_date,
+                ).count()
+                
+                non_hazard_out = MonitorData.objects.filter(
+                    SRNO__in=MachineMast.objects.filter(machineno__in=['2', '6','10']).values_list('SRNO', flat=True),
+                    PunchDate__date=selected_date,
+                ).count()
+                all_departments = DepartMast.objects.values_list("DepartName", flat=True)
+                monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
+                srnos = monitor_data.values_list('SRNO', flat=True)
+                machines = MachineMast.objects.filter(SRNO__in=srnos)
+                enrollids = monitor_data.values_list('EnrollID', flat=True)
+                enrolls = EnrollMast.objects.filter(enrollid__in=enrollids).select_related('department')
+                employees = EmpMast.objects.filter(enrollid__in=enrolls)
+                # Lookup dictionaries
+                machine_dict = {machine.SRNO: machine for machine in machines}
+                enroll_dict = {enroll.enrollid: enroll for enroll in enrolls}
 
-    return JsonResponse({
-        'live_data': data,
-        'hazard_in_count': hazard_in_count,
-        'hazard_out_count': hazard_out_count,
-        'hazard_total': hazard_in_count - hazard_out_count,
-        'non_hazard_in': non_hazard_in,
-        'non_hazard_out': non_hazard_out,
-        'non_hazard_total': non_hazard_in - non_hazard_out,
-        "non_hazardous": non_hazardous_data,
-        "hazardous": hazardous_data,
-    })
+                non_hazardous_departments = defaultdict(int)
+                hazardous_departments = defaultdict(int)
+
+            # Define all departments to ensure departments with 0 data are included
+                all_departments = [dept.DepartName for dept in DepartMast.objects.all()]
+
+            # Calculate department-wise counts for Non-Hazardous and Hazardous areas
+                for record in monitor_data:
+                    machine = machine_dict.get(record.SRNO)
+                    enroll = enroll_dict.get(record.EnrollID)
+
+                    if not machine or not enroll or not enroll.department:
+                        continue
+
+                    department_name = enroll.department.DepartName
+
+                    if machine.machineno in ['1', '5','9']:  # Non-hazard In
+                        non_hazardous_departments[department_name] += 1
+                    
+                    elif machine.machineno in ['2', '6','10']:  # Non-hazard Out
+                        non_hazardous_departments[department_name] -= 1
+                        
+                    elif machine.machineno in ['3', '7']:  # Hazard In
+                        hazardous_departments[department_name] += 1
+                    
+                    elif machine.machineno in ['4', '8']:  # Hazard Out
+                        hazardous_departments[department_name] -= 1
+                    
+                    non_hazardous_data = [
+                        {"Department": dept, "HeadCount": max(0, non_hazardous_departments.get(dept, 0))}
+                        for dept in all_departments
+                    ]
+
+                    hazardous_data = [
+                        {"Department": dept, "HeadCount": max(0, hazardous_departments.get(dept, 0))}
+                        for dept in all_departments
+                    ]
+            except Exception as e:
+                logger.error(f"Error processing department data: {e}")
+                return JsonResponse({"error": "Error processing department data"}, status=500)
+
+
+            return JsonResponse({
+                'live_data': data,
+                'hazard_in_count': hazard_in_count,
+                'hazard_out_count': hazard_out_count,
+                'hazard_total': hazard_in_count - hazard_out_count,
+                'non_hazard_in': non_hazard_in,
+                'non_hazard_out': non_hazard_out,
+                'non_hazard_total': non_hazard_in - non_hazard_out,
+                "non_hazardous": non_hazardous_data,
+                "hazardous": hazardous_data,
+            },status=200)
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}", exc_info=True)
+            return JsonResponse({"error": "An unexpected error occurred"}, status=500)
 
 
 
