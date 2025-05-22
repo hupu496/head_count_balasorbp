@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Daily Report {{ selected_date }}</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+  <!-- <button onclick="downloadPDF()">Download PDF</button> -->
+
+  <div >
+   <h3>Headcount Report - {{ selected_date }}</h3>
+
+{% if data %}
+  <table border="1" cellpadding="5" id="pdf-content">
+    <thead>
+      <tr>
+        <th>Entry</th>
+        <th>Card No</th>
+        <th>Name</th>
+        <th>Date</th>
+         <th>Machine Id</th>
+          <th>Time</th>
+        <th>Department</th>
+        <th>Designation</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in data %}
+        <tr>
+          <td>{{ item.machine.Name }}({{ item.machine.Response }})</td>
+          <td>{{ item.monitor.EnrollID }}</td>
+          <td>{{ item.employee.Name }}</td>
+          <td>{{ item.monitor.PunchDate }}</td>
+           <td>{{ item.machine.machineno }}</td>
+            <td>{{ item.monitor.PunchDate|date:"h:i:s a" }}</td>
+          <td>{{ item.employee.department.DepartName }}</td>
+          <td>{{ item.employee.designation.Designation }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No attendance records found for {{ selected_date }}.</p>
+{% endif %}
+  </div>
+
+  <script>
+    function downloadPDF() {
+      const element = document.getElementById('pdf-content');
+      const opt = {
+        margin:       0.5,
+        filename:     'report_{{ selected_date }}.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+</body>
+</html>

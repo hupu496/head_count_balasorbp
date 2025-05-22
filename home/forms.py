@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import ModelChoiceField
-from .models import CompanyMast, MachineMast, DepartMast, DesMast, EmpMast,MonitorData
+from .models import CompanyMast, MachineMast, DepartMast, DesMast, EmpMast,MonitorData,GatePass
 import datetime
 
 
@@ -47,4 +47,8 @@ class UploadEmployeeForm(forms.Form):
     file = forms.FileField(label='Select an Excel file')
     department = forms.ModelChoiceField(queryset=DepartMast.objects.all(), label='Department', required=True)
     designation = forms.ModelChoiceField(queryset=DesMast.objects.all(), label='Designation', required=True)
+class GatePassForm(forms.ModelForm):
+    class Meta:
+        model = GatePass
+        fields = "__all__"
     

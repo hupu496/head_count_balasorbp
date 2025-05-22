@@ -1,0 +1,361 @@
+{% extends 'layouts/visitor_base.html' %}
+{% load static %}
+{% block css %}
+
+.bg-gradient-dark {
+    --bs-btn-color: #000;
+    --bs-btn-bg: #f37022;
+    --bs-btn-border-color: #f37022;
+  }
+
+    .disabled-link {
+        pointer-events: none; /* Prevents clicking */
+        opacity: 0.6; /* Makes it look disabled */
+    }
+    .disabled-link {
+    pointer-events: none; /* Disables clicks */
+    opacity: 0.6; /* Makes it look disabled */
+    cursor: not-allowed; /* Shows disabled cursor */
+}
+
+  
+ {% endblock css %}
+
+{% block title %} IOCL | Visitor Gate Pass System {% endblock title %}
+
+{% block body %} class="index-page bg-gray-200" {% endblock body %}
+
+{% block content %}
+
+</div></div></div>
+<header class="header-2">
+  <div class="page-header min-vh-25 relative" style="background-image: url('{% static 'img/bg2.jpg' %}')">
+    <span class="mask bg-gradient-primary opacity-4"></span>
+    
+  </div>
+</header>
+<div class="card card-body blur shadow-blur mx-3 mx-md-4 mt-n6">
+  <h3 class="text-center">Pending Visitor Out</h3>
+  <section class="pt-3 pb-4" id="count-stats">
+  <div class="table-responsive">
+    <table id="myTable" class="table data-table stripe hover nowrap align-items-center mb-0 display">
+      <thead>
+        <tr>
+          <th class="text-center text-uppercase text-secondary opacity-7">Pass No</th>
+          <th class="text-center text-uppercase text-secondary opacity-7">Card No</th>
+          <th class="text-center text-uppercase text-secondary opacity-7">Name</th>
+          <th class="text-center text-uppercase text-secondary opacity-7">Company</th>
+          <th class="text-center text-uppercase text-secondary opacity-7">Mobile</th>
+          <th class="text-center text-uppercase text-secondary opacity-7">Vechicle</th>
+          <th class="text-center text-uppercase text-secondary opacity-7">Govt ID</th>
+          <th class="text-center text-uppercase text-secondary opacity-7">Permitted Area</th>
+          <th class="text-center text-uppercase text-secondary opacity-7">IN Time</th>
+          <th class="text-center text-uppercase text-secondary opacity-7">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+           {% for gatepass in gatepasses %}
+        <tr>
+          <td class="align-middle text-center">    
+              <div class="d-flex flex-column justify-content-center">
+                <p class="text-secondary text-xs font-weight-normal">{{ gatepass.passNo }}</p>
+              </div>
+          </td>
+          <td class="align-middle text-center">
+          <p class="text-secondary text-xs font-weight-normal">{{ gatepass.cardNo }}</p>
+          </td>
+          <td class="align-middle text-center">
+            <span class="text-secondary text-xs font-weight-normal">{{ gatepass.name }}</span>
+          </td>
+          <td class="align-middle text-center">
+            <span class="text-secondary text-xs font-weight-normal">{{ gatepass.company }}</span>
+          </td>
+          <td class="align-middle text-center">
+            <span class="text-secondary text-xs font-weight-normal">{{ gatepass.mobile }}</span>
+          </td>
+          <td class="align-middle text-center">
+            <span class="text-secondary text-xs font-weight-normal">{{ gatepass.vehicleNo }}</span>
+          </td>
+           <td class="align-middle text-center">
+            <span class="text-secondary text-xs font-weight-normal">{{ gatepass.govt_id }}:{{ gatepass.govtno }}</span>
+          </td>
+          <td>
+             {% if gatepass.allowing_entry == 'Yes' %}
+            <span class="text-secondary text-xs font-weight-normal">Hazardous Area</span>
+          {% else %}
+            <span class="text-secondary text-xs font-weight-normal">Non Hazardous Area</span>
+          {% endif %}
+          </td>
+          <td class="align-middle text-center">
+            <span class="text-secondary text-xs font-weight-normal">{{ gatepass.inTime }}</span>
+          </td>
+<td class="align-middle text-center">
+    <form action="{% url 'update_gatepass_status' gatepass.id %}" method="POST">
+        {% csrf_token %}
+        <div class="input-group input-group-outline">
+            <select name="remarks" class="form-control" id="remarksSelect" onchange="toggleSubmitButton()">
+                <option value="">Select Remark</option>
+                <option value="Card Deposit Exit">Card Deposit Exit</option>
+                <option value="Without Card Deposit Exit">Without Card Deposit Exit</option>
+            </select>
+        </div>
+
+        <button type="submit" 
+                class="btn btn-primary" 
+                id="submitButton" 
+                data-toggle="tooltip" 
+                data-original-title="Edit user"
+                disabled>  <!-- Default disabled -->
+            OUT
+        </button>
+    </form>
+</td>
+
+<!-- CSS for Disabled Button -->
+<style>
+    .btn:disabled {
+        pointer-events: none; /* Prevent clicking */
+        opacity: 0.6; /* Make it look disabled */
+        cursor: not-allowed; /* Change cursor to indicate disabled */
+    }
+</style>
+
+<!-- JavaScript to Enable Button -->
+<script>
+    function toggleSubmitButton() {
+        var selectElement = document.getElementById('remarksSelect');
+        var button = document.getElementById('submitButton');
+
+        // If a remark is selected, enable the button
+        if (selectElement.value) {
+            button.disabled = false; // Enable button
+        } else {
+            button.disabled = true; // Disable button if no selection
+        }
+    }
+</script>
+
+
+
+
+<style>
+    /* Initially disable link */
+    .disabled-link {
+        pointer-events: none; /* Prevent clicking */
+        opacity: 0.6; /* Make it look disabled */
+        cursor: not-allowed; /* Change cursor to indicate disabled */
+    }
+</style>
+
+<script>
+    function toggleLink() {
+        var selectElement = document.getElementById('remarksSelect');
+        var link = document.getElementById('updateLink');
+
+        if (selectElement.value) {
+            link.classList.remove('disabled-link'); // Enable link
+        } else {
+            link.classList.add('disabled-link'); // Keep disabled
+        }
+    }
+</script>
+
+        </tr>
+{% endfor %}
+    
+      </tbody>
+    </table>
+  </div>
+  </section>
+</div>
+
+{% endblock content %}
+{% block javascripts %}
+<!--  Plugin for TypedJS, full documentation here: https://github.com/inorganik/CountUp.js -->
+<script src="{% static 'js/plugins/countup.min.js' %}"></script>
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script src="{% static 'js/plugins/prism.min.js' %}"></script>
+<script src="{% static 'js/plugins/highlight.min.js' %}"></script>
+<!--  Plugin for Parallax, full documentation here: https://github.com/dixonandmoe/rellax -->
+<script src="{% static 'js/plugins/rellax.min.js' %}"></script>
+<!--  Plugin for TiltJS, full documentation here: https://gijsroge.github.io/tilt.js/ -->
+<script src="{% static 'js/plugins/tilt.min.js' %}"></script>
+<!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script>
+  document.querySelectorAll('input[name="flexRadioDefault"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+      document.querySelector('select[name="location"]').disabled = this.value !== 'gateWise';
+    });
+  });
+</script>
+<script>
+    function toggleButton() {
+        var selectElement = document.getElementById('remarksSelect');
+        var button = document.getElementById('submitButton');
+
+        if (selectElement.value) {
+            button.classList.remove('disabled-link'); // Enable link
+        } else {
+            button.classList.add('disabled-link'); // Disable link
+        }
+    }
+</script>
+<script type="text/javascript">
+  $(document).ready(function() {
+       var table = $('.data-table').DataTable({
+      scrollCollapse: true,
+      autoWidth: false,
+      responsive: true,
+      dom: 'Bfrtip',
+      buttons: [
+        {
+          extend: 'pdfHtml5', // Ensure the button type is correct
+          className: 'btn btn-danger btn-padding',
+          text: 'PDF'
+        },
+        {
+          extend: 'csvHtml5',
+          className: 'btn btn-success btn-padding',
+          text: 'CSV'
+        },
+        {
+          extend: 'excelHtml5',
+          className: 'btn btn-info btn-padding',
+          text: 'Excel'
+        }
+      ],
+      columnDefs: [
+        {
+          targets: "datatable-nosort",
+          orderable: false,
+        }
+      ],
+      "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+      "language": {
+        "info": "_START_-_END_ of _TOTAL_ entries",
+        searchPlaceholder: "Search"
+      },
+    });
+
+    // Function to trigger PDF download
+    function triggerPDFDownload() {
+      table.button(0).trigger(); // Trigger the first button (PDF export)
+      console.log('PDF downloaded at', new Date().toLocaleTimeString());
+    }
+
+    // Timer to check every 10 seconds
+    const targetHour = 23; // 12 PM
+    const targetMinute = 58; // 55 minutes past the hour
+
+    setInterval(() => {
+      const now = new Date();
+      if (now.getHours() === targetHour && now.getMinutes() === targetMinute) {
+        triggerPDFDownload(); // Trigger the PDF download
+      }
+    }, 10000); // Check every 10 seconds
+
+    new $.fn.dataTable.FixedHeader(table);
+
+    $('body').one('click', '.delete', function() {
+      var id = $(this).data('value');
+      var prompt = confirm("Are you sure you want to delete?");
+      if (prompt) {
+        $.ajax({
+          url: "<?php echo base_url('admin/service/delete_service')?>",
+          method: "POST",
+          data: { id: id },
+          success: function(data) {
+            if (data == 1) {
+              swal("Deleted!", "You clicked the button!", "success");
+            } else {
+              swal("Oops!", "Something went wrong!", "error");
+            }
+          }
+        });
+      }9
+    });
+  });
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const dateInput = document.getElementById("selected_date");
+
+    // Load stored date from localStorage (if available)
+    const storedDate = localStorage.getItem("selected_date");
+
+    if (storedDate) {
+      dateInput.value = storedDate;
+    } else if (!dateInput.value) {
+      // Default to today's date if no value is set
+      const today = new Date().toISOString().split("T")[0];
+      dateInput.value = today;
+    }
+
+    // Save selected date to localStorage on change
+    dateInput.addEventListener("change", function () {
+      localStorage.setItem("selected_date", dateInput.value);
+    });
+
+    // Update document title with selected date
+    const selectedDate = new Date(dateInput.value);
+    document.title = `IOCL | Gate Pass Visitor System | ${selectedDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })}`;
+  });
+</script>
+
+<script type="text/javascript">
+  if (document.getElementById('state1')) {
+    const countUp = new CountUp('state1', document.getElementById("state1").getAttribute("countTo"));
+    if (!countUp.error) {
+      countUp.start();
+    } else {
+      console.error(countUp.error);
+    }
+  }
+  if (document.getElementById('state2')) {
+    const countUp1 = new CountUp('state2', document.getElementById("state2").getAttribute("countTo"));
+    if (!countUp1.error) {
+      countUp1.start();
+    } else {
+      console.error(countUp1.error);
+    }
+  }
+  if (document.getElementById('state3')) {
+    const countUp2 = new CountUp('state3', document.getElementById("state3").getAttribute("countTo"));
+    if (!countUp2.error) {
+      countUp2.start();
+    } else {
+      console.error(countUp2.error);
+    }
+  }
+</script>
+<script type="text/javascript">
+  const targetTime = new Date().setHours(23, 59, 0, 0); // Set target time (1:39 PM in this example)
+  const currentTime = Date.now();
+
+  if (currentTime < targetTime) {
+    setTimeout(() => {
+      location.reload();
+    }, targetTime - currentTime);
+  } else {
+    console.log("The specified time has already passed; no action taken.");
+  }
+</script>
+<script type="text/javascript">
+   setInterval(function() {
+     $.ajax({
+         url: "{% url 'visitor_report' %}",
+         success: function(data) {
+             // Update the page content without refreshing
+         }
+     });
+   }, 2000);  // Makes an AJAX call every 5 seconds
+   
+</script>
+
+
+{% endblock javascripts %}

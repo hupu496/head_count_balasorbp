@@ -1,0 +1,390 @@
+{% extends 'layouts/visitor_base.html' %}
+{% load static %}
+{% block css %}
+
+.bg-gradient-dark {
+    --bs-btn-color: #000;
+    --bs-btn-bg: #f37022;
+    --bs-btn-border-color: #f37022;
+  }
+
+    input::placeholder {
+        color: black !important; /* Dark placeholder */
+        font-weight: bold;
+        opacity: 1; /* Ensure it appears fully dark */
+        color: black;
+    }
+
+  
+ {% endblock css %}
+
+{% block title %} IOCL | Visitor Gate Pass System {% endblock title %}
+
+{% block body %} class="index-page bg-gray-200" {% endblock body %}
+
+{% block content %}
+
+{% if messages %}
+  {% for message in messages %}
+  {% if message.tags == 'success' %}
+    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert" style="margin-bottom: 35px;">
+         <span class="alert-icon text-white"><i class="ni ni-like-2"></i></span>
+        <span class="alert-text text-white"><strong>Success!</strong>{{ message }}</span>
+     
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    {% else %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin-bottom: 35px;">
+    <span class="alert-icon text-white"><i class="ni ni-like-2"></i></span>
+    <span class="alert-text text-white"><strong>Error!</strong> {{ message }}</span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endif %}
+  {% endfor %}
+{% endif %}
+</div></div>
+  
+</div>
+<div id="outModal" class="modal" style="display: none;">
+    <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title" id="modal-title-default">Visitor Out</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <h4>Please firstly out all visitor person !.</h4>
+            <p>This is information pop up disable after 6:00pm</p>
+            
+          </div>
+         
+        </div>
+</div>
+   <main class="main-content  mt-0">
+    <section>
+      <div class="page-header min-vh-100">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-4 d-lg-flex d-none h-100 my-auto pe-0 position-absolute top-0 start-0 text-center justify-content-center flex-column">
+              <div class="position-relative bg-gradient-primary h-100 m-3 px-7 border-radius-lg d-flex flex-column justify-content-center" style="background-image: url('{% static 'img/check_pass.jpg' %}'); background-size: cover;">
+              </div>
+            </div>
+            <div class="col-xl-7 col-lg-7 col-md-7 d-flex flex-column ms-auto me-auto ms-lg-auto me-lg-5">
+               <div class="card-body">
+                   {% if messages %}
+                  {% for message in messages %}
+                    <p>{{ message }}</p>
+                  {% endfor %}
+                {% endif %}
+   <form method="POST" action="">
+    {% csrf_token %}
+   
+       <div class="card mt-4 mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">Visitor Entry Form</h4>
+            </div>
+            <div class="card-body">
+               
+                    <!-- Date Selection -->
+                    <div class="form-outline mb-4">
+                        <input type="date" id="visitDate" class="form-control" required />
+                        <label class="form-label" for="visitDate">Visit Date</label>
+                    </div>
+
+                    <!-- Gate Selection -->
+                    <div class="form-outline mb-4">
+                        <select class="form-select" id="gateSelect" required>
+                            <option value="" disabled selected>Select Gate</option>
+                            <option value="Gate A">Gate A</option>
+                            <option value="Gate B">Gate B</option>
+                            <option value="Gate C">Gate C</option>
+                            <option value="Gate D">Gate D</option>
+                        </select>
+                        <label class="form-label" for="gateSelect">Select Gate</label>
+                    </div>
+
+                    <!-- Number of Visitors -->
+                    <div class="form-outline mb-4">
+                        <select class="form-select" id="visitorCount" required>
+                            <option value="" disabled selected>Select Number of Visitors</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                        <label class="form-label" for="visitorCount">Number of Visitors</label>
+                    </div>
+
+                    <!-- Dynamic Visitor Inputs -->
+                    <div id="visitorInputs" class="mb-4">
+                        <!-- Visitor input fields will be generated here -->
+                    </div>
+
+                    <!-- Pass Number -->
+                    <div class="form-outline mb-4">
+                        <input type="text" id="passNo" class="form-control" required />
+                        <label class="form-label" for="passNo">Pass Number</label>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary btn-block">Submit Form</button>
+              
+            </div>
+        </div>
+    
+</form>
+
+
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+
+
+
+
+{% endblock content %}
+{% block javascripts %}
+<!--  Plugin for TypedJS, full documentation here: https://github.com/inorganik/CountUp.js -->
+<script src="{% static 'js/plugins/countup.min.js' %}"></script>
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script src="{% static 'js/plugins/prism.min.js' %}"></script>
+<script src="{% static 'js/plugins/highlight.min.js' %}"></script>
+<!--  Plugin for Parallax, full documentation here: https://github.com/dixonandmoe/rellax -->
+<script src="{% static 'js/plugins/rellax.min.js' %}"></script>
+<!--  Plugin for TiltJS, full documentation here: https://gijsroge.github.io/tilt.js/ -->
+<script src="{% static 'js/plugins/tilt.min.js' %}"></script>
+<!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+ <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all form elements
+            document.querySelectorAll('.form-outline').forEach(formOutline => {
+                new mdb.Input(formOutline).init();
+            });
+
+            // Handle visitor count change
+            const visitorCountSelect = document.getElementById('visitorCount');
+            const visitorInputsContainer = document.getElementById('visitorInputs');
+
+            visitorCountSelect.addEventListener('change', function() {
+                const count = parseInt(this.value);
+                generateVisitorInputs(count);
+            });
+
+            // Function to generate visitor input fields
+            function generateVisitorInputs(count) {
+                visitorInputsContainer.innerHTML = '';
+                
+                for (let i = 1; i <= count; i++) {
+                    const visitorDiv = document.createElement('div');
+                    visitorDiv.className = 'visitor-entry';
+                    
+                    visitorDiv.innerHTML = `
+                        <h6>Visitor ${i} Details</h6>
+                        <div class="form-outline mb-3">
+                            <input type="text" id="visitorName${i}" class="form-control" required />
+                            <label class="form-label" for="visitorName${i}">Name</label>
+                        </div>
+                        <div class="form-outline mb-3">
+                            <input type="text" id="visitorId${i}" class="form-control" required />
+                            <label class="form-label" for="visitorId${i}">ID Number</label>
+                        </div>
+                        <div class="form-outline">
+                            <input type="tel" id="visitorPhone${i}" class="form-control" required />
+                            <label class="form-label" for="visitorPhone${i}">Phone Number</label>
+                        </div>
+                    `;
+                    
+                    visitorInputsContainer.appendChild(visitorDiv);
+                }
+                
+                // Re-initialize the newly created form elements
+                document.querySelectorAll('.form-outline').forEach(formOutline => {
+                    new mdb.Input(formOutline).init();
+                });
+            }
+
+            // Form submission
+            const form = document.getElementById('visitorForm');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Collect form data
+                const formData = {
+                    date: document.getElementById('visitDate').value,
+                    gate: document.getElementById('gateSelect').value,
+                    passNo: document.getElementById('passNo').value,
+                    visitorCount: parseInt(document.getElementById('visitorCount').value),
+                    visitors: []
+                };
+                
+                // Collect visitor data
+                for (let i = 1; i <= formData.visitorCount; i++) {
+                    formData.visitors.push({
+                        name: document.getElementById(`visitorName${i}`).value,
+                        id: document.getElementById(`visitorId${i}`).value,
+                        phone: document.getElementById(`visitorPhone${i}`).value
+                    });
+                }
+                
+                // Here you would typically send the data to a server
+                console.log('Form submitted with data:', formData);
+                alert('Form submitted successfully!');
+                
+                // Reset form
+                form.reset();
+                visitorInputsContainer.innerHTML = '';
+            });
+        });
+    </script>
+<script>
+    // Get current time in hours and minutes
+    function getCurrentTime() {
+        let now = new Date();
+        return now.getHours() * 60 + now.getMinutes(); // Convert time to total minutes
+    }
+
+    // Check if the time is between 5:00 PM and 6:00 PM
+    function checkTimeAndRedirect() {
+        const currentTime = getCurrentTime();
+        const startTime = 17 * 60; // 5:00 PM in minutes
+        const endTime = 18 * 60; // 6:00 PM in minutes
+
+        console.log('Current Time (in minutes):', currentTime);  // For debugging
+
+        // If the time is between 5:00 PM and 6:00 PM
+        if (currentTime >= startTime && currentTime < endTime) {
+            // Show modal
+            document.getElementById('outModal').style.display = 'block';
+
+            // Redirect to 'visitor_out' after 30 seconds
+            setTimeout(function() {
+                window.location.href = "{% url 'visitor_out' %}"; // Redirect after 30 sec
+            }, 30000); // 30 seconds delay
+        }
+    }
+
+    // Call function immediately after page load
+    window.onload = function() {
+        checkTimeAndRedirect(); // Initial check when page loads
+        setInterval(checkTimeAndRedirect, 30000); // Check every 30 seconds
+    };
+
+    // Close modal when user clicks outside of it (optional)
+    window.onclick = function(event) {
+        let modal = document.getElementById('outModal');
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>
+
+
+
+<script type="text/javascript">
+   $(document).ready(function(e) {
+        var table=$('.data-table').DataTable({
+            scrollCollapse: true,
+            autoWidth: false,
+            responsive: true,
+            dom: 'Bfrtip',
+             buttons: [
+                {
+                    extend: 'collection',
+                    className: 'btn btn-warning',
+                    buttons: [
+                        
+                        'pdf',
+                        'csv',
+                        'excel',
+                        
+                    ]
+                }
+            ],
+            columnDefs: [{
+                targets: "datatable-nosort",
+                orderable: false,
+            }],
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "language": {
+                "info": "_START_-_END_ of _TOTAL_ entries",
+                searchPlaceholder: "Search"
+            },
+        });
+        new $.fn.dataTable.FixedHeader( table );
+
+    });
+</script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        var enrollDict = {{ enroll_dict|safe }}; // Get the enroll_dict from context
+        $('#area-select').change(function() {
+            var selectedArea = $(this).val();
+            var enrollSelect = $('#enrollid-select');
+            enrollSelect.empty();
+            enrollSelect.append('<option>Select CardNo</option>');
+
+            // Populate the EnrollID dropdown based on selected department
+            if (enrollDict[selectedArea]) {
+                enrollDict[selectedArea].forEach(function(enroll) {
+                    enrollSelect.append('<option value="' + enroll.id + '">' + enroll.enrollid + '</option>');
+                });
+            }
+        });
+    });
+</script>
+    <script type="text/javascript">
+    $(document).ready(function() {
+        var designationDict = {{ designation_dict|safe }};
+
+        // Handle Department change
+        $('#department-select').change(function() {
+            var selectedArea = $(this).val();
+            
+            // Filter designations based on department
+            var designations = designationDict[selectedArea] || [];
+            var designationSelect = $('#designation-select');
+            designationSelect.empty();
+            designationSelect.append('<option>Select Designation</option>');
+            
+            designations.forEach(function(designation) {
+                designationSelect.append('<option value="' + designation.Desgid + '">' + designation.Designation + '</option>');
+            });
+
+            // Now fetch EnrollID based on department
+            $.ajax({
+    url: "{% url 'get_enrollid_by_department' %}",  // URL to your new view
+    data: {
+        'DepartId': selectedArea
+    },
+    success: function(response) {
+        var enrollSelect = $('#enrollid-select');
+        enrollSelect.empty();
+        enrollSelect.append('<option>Select EnrollID</option>');
+        
+        // Populate the EnrollID dropdown
+        if (response.enrolls) {
+            $.each(response.enrolls, function(index, enroll) {
+                enrollSelect.append('<option value="'+ enroll.id +'">'+ enroll.enrollid +'</option>');
+            });
+        }
+    },
+    error: function(xhr) {
+        alert("Failed to fetch EnrollID: " + xhr.responseText);
+    }
+});
+        });
+    });
+</script>
+{% endblock javascripts %}

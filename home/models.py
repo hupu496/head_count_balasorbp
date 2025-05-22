@@ -1,6 +1,39 @@
 from django.db import models
+from django.db.models import Q
 
 # Create your models here.
+class GatePass(models.Model):
+    allowing_entry = models.CharField(max_length=10, choices=[('Yes', 'Hazardous Area'), ('No', 'Non Hazardous Area')])
+    id = models.IntegerField(primary_key=True)
+    cardNo                       = models.CharField(max_length=250,blank=False,null=False)
+    date                         = models.DateField(null=True, blank=True)
+    name                         = models.CharField(max_length=250,blank=True, null=True)
+    company                      = models.CharField(max_length=250,blank=True, null=True)
+    address                      = models.CharField(max_length=250,blank=True,null=True)
+    mobile                       = models.CharField(max_length=250,blank=True, null=True)
+    vehicleNo                    = models.CharField(max_length=250,blank=True, null=True)
+    purpose                      = models.TextField()
+    noOfPerson                   = models.CharField(max_length=250,blank=True,null=True)
+    idNo                         = models.CharField(max_length=250,blank=True,null=True)
+    typeOf                       = models.CharField(max_length=250,blank=True,null=True)
+    govt_id                      = models.CharField(max_length=250,blank=True,null=True)
+    govtno                       = models.CharField(max_length=250,blank=True,null=True)
+    personToMeet                 = models.CharField(max_length=250,blank=True,null=True)
+    inTime                       = models.CharField(max_length=250,blank=True,null=True)
+    outTime                      = models.CharField(max_length=250,blank=True,null=True)
+    permittedBy                  = models.CharField(max_length=250,blank=True,null=True)
+    carringGadget                = models.CharField(max_length=250,blank=True,null=True)
+    passNo                       = models.CharField(max_length=250,blank=True,null=True)
+    image                        = models.ImageField(upload_to="gatepass_images/", default="default.jpg")
+    remarks = models.TextField(blank=True, null=True) 
+    valid_from                   = models.DateTimeField(null=True, blank=True)
+    valid_to                     = models.DateTimeField(null=True, blank=True)
+    renew_remarks=models.TextField(max_length=250,blank=True,null=True)
+    createdAt                    = models.DateField(null=True, blank=True)
+    updatedAt                    = models.DateField(null=True, blank=True)
+    status                       = models.CharField(max_length=250, default='true')
+    def __str__(self):
+            return f"GatePass {self.id}"
 class MachineMast(models.Model):
     id = models.IntegerField(primary_key=True)
     machineno = models.CharField(max_length=50)
@@ -72,5 +105,12 @@ class DesMast(models.Model):
 
 	def __str__(self):
 		return self.Desgid
+      
+class ReportLog(models.Model):
+    Id = models.AutoField(primary_key=True)
+    date = models.DateField()  
+    addedon = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    Status = models.IntegerField(default=1)
 
-
+    def __str__(self):
+        return f"{self.date}"

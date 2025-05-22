@@ -1,0 +1,155 @@
+{% extends 'layouts/base_background.html' %}
+{% load static %}
+{% block css %}
+body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+.mt-n6 {
+margin-top: 0rem !important;
+}
+.text-gradient.text-primary {
+background-image: linear-gradient(195deg, #021750, #021750);
+}
+.btn-primary {
+--bs-btn-color: #000;
+--bs-btn-bg: #f37022;
+--bs-btn-border-color: #f37022;
+}
+.Cd{
+border-style: solid;
+border-color: #3e4f7a;
+border-radius: 9px;
+}
+
+
+    
+
+{% endblock css %}
+{% block title %} IOCL | Head Count System {% endblock title %}
+{% block body %} class="index-page bg-gray-200" {% endblock body %}
+{% block content %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</div></div></div>
+ <!-- <div class="full-screen-bg"></div> -->
+  
+  <!-- Modal -->
+   <main class="main-content  mt-0">
+    <section>
+      <div class="page-header min-vh-100">
+        <div class="container">
+          <div class="row">
+            <div class="col-6 d-lg-flex d-none h-100 my-auto pe-0 position-absolute top-0 start-0 text-center justify-content-center flex-column">
+              <div class="position-relative bg-gradient-primary h-100 m-3 px-7 border-radius-lg d-flex flex-column justify-content-center" style="background-image: url('{% static 'img/visitor_gatepass.png' %}'); background-size: cover;">
+              </div>
+            </div>
+            <div class="col-xl-4 col-lg-5 col-md-7 d-flex flex-column ms-auto me-auto ms-lg-auto me-lg-5">
+              <div class="card card-plain">
+                <div class="card-header">
+                  <h4 class="font-weight-bolder">Login Form</h4>
+                  <p class="mb-0">Enter your Username and Password to Login</p>
+                </div>
+                <div class="card-body">
+                   {% if messages %}
+                  {% for message in messages %}
+                    <p>{{ message }}</p>
+                  {% endfor %}
+                {% endif %}
+                <form id="loginForm" method="POST">
+                  {% csrf_token %}
+                    <div class="input-group input-group-outline mb-3">
+                      <label class="form-label">UserName</label>
+                      <input type="text" class="form-control" name="username">
+                    </div>
+                    <div class="input-group input-group-outline mb-3">
+                      <label class="form-label">Password</label>
+                      <input type="password" class="form-control" name="password">
+                    </div>
+                    
+                    <div class="text-center">
+                      <button type="submit" class="btn btn-lg bg-gradient-primary btn-lg w-100 mt-4 mb-0">Sign Up</button>
+                    </div>
+                  </form>
+                </div>
+                <div class="card-footer text-center pt-0 px-lg-2 px-1">
+                 <p class="mb-2 text-sm mx-auto">
+                   
+                   <a href="{% url 'home' %}" class="text-primary text-gradient font-weight-bold"> Back To Head Count System</a>
+                  </p> 
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+<!-- MODEL -->
+{% endblock content %}
+{% block javascripts %}
+<script src="{% static 'js/plugins/countup.min.js' %}"></script>
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script src="{% static 'js/plugins/prism.min.js' %}"></script>
+<script src="{% static 'js/plugins/highlight.min.js' %}"></script>
+<!--  Plugin for Parallax, full documentation here: https://github.com/dixonandmoe/rellax -->
+<script src="{% static 'js/plugins/rellax.min.js' %}"></script>
+<!--  Plugin for TiltJS, full documentation here: https://gijsroge.github.io/tilt.js/ -->
+<script src="{% static 'js/plugins/tilt.min.js' %}"></script>
+<!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
+<script src="{% static 'js/plugins/choices.min.js' %}"></script>
+<script>
+    // Automatically show the modal when the page loads
+    document.addEventListener('DOMContentLoaded', function () {
+      var modal = new bootstrap.Modal(document.getElementById('modal-form'));
+      modal.show();
+    });
+  </script>
+<script type="text/javascript">
+   if (document.getElementById('state1')) {
+     const countUp = new CountUp('state1', document.getElementById("state1").getAttribute("countTo"));
+     if (!countUp.error) {
+       countUp.start();
+     } else {
+       console.error(countUp.error);
+     }
+   }
+   if (document.getElementById('state2')) {
+     const countUp1 = new CountUp('state2', document.getElementById("state2").getAttribute("countTo"));
+     if (!countUp1.error) {
+       countUp1.start();
+     } else {
+       console.error(countUp1.error);
+     }
+   }
+   if (document.getElementById('state3')) {
+     const countUp2 = new CountUp('state3', document.getElementById("state3").getAttribute("countTo"));
+     if (!countUp2.error) {
+       countUp2.start();
+     } else {
+       console.error(countUp2.error);
+     };
+   }
+</script>
+<script>
+ $(document).ready(function() {
+        $('#loginForm').on('submit', function(event) {
+            event.preventDefault();
+            $.ajax({
+                type: 'POST',
+                url: '{% url "login_visitor" %}',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        window.location.href = response.redirect_url;
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock javascripts %}

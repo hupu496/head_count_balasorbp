@@ -1,8 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse,JsonResponse
 from django.contrib import messages
-from home.models import MonitorData, MachineMast, CompanyMast, DepartMast, DesMast, EmpMast, EnrollMast
+from home.models import ReportLog, MonitorData, MachineMast, CompanyMast, DepartMast, DesMast, EmpMast, EnrollMast, GatePass
 import pyodbc,datetime 
+import base64,datetime
+from datetime import date
+from datetime import datetime, time
 from django.db import models 
 from django.db import connection, transaction
 from django.db.models import OuterRef, Subquery
@@ -23,18 +26,24 @@ from django.db.models import Count
 from collections import defaultdict
 from django.db.models import Q, Count, F
 import logging
+import os
+from django.utils.timezone import now
+from django.contrib.auth.models import User
+from django.contrib.auth.views import LogoutView
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from .utils import generate_report_for_date 
+import subprocess
 logger = logging.getLogger(__name__)
 
+@login_required(login_url='/')
 def home(request):
-    if request.session.get('login', None):
-        return redirect('dashboard')
-
     today = timezone.now().date()
     form = DateForm(initial={"selected_date": today})
     selected_date = today
     is_today = True  # Track if the selected date is today
     form_valid = False
-
     if form.is_valid():
         form_valid = True
         selected_date = form.cleaned_data['selected_date']
@@ -44,7 +53,7 @@ def home(request):
         request.session['selected_date'] = today.strftime("%Y-%m-%d")
     with pyodbc.connect(
         'Driver={SQL Server};'
-        'Server=DESKTOP-FEURJVI;'
+        'Server=DESKTOP-5N7IKQ6;'
         'Database=DATAIOCL;'
         'Trusted_Connection=yes;'
     ) as conn:
@@ -232,12 +241,12 @@ def home(request):
         elif machine.machineno in ['4', '8']:  # Hazard Out
             hazardous_departments[department_name] -= 1
  
-        non_hazardous_data = [
+    non_hazardous_data = [
             {"Department": dept, "HeadCount": max(0, non_hazardous_departments.get(dept, 0))}
             for dept in all_departments
         ]
 
-        hazardous_data = [
+    hazardous_data = [
             {"Department": dept, "HeadCount": max(0, hazardous_departments.get(dept, 0))}
             for dept in all_departments
         ]
@@ -247,7 +256,6 @@ def home(request):
     context = {
         "non_hazardous": non_hazardous_data,
         "hazardous": hazardous_data,
-        
         'data': data,
         'form':form,
         'is_today': is_today,
@@ -262,49 +270,12 @@ def home(request):
         
     }
     return render(request, 'pages/index1.html', context)
+@login_required(login_url='/')
 def live_data(request):
         try:
-            if request.session.get('login', None):
-                return redirect('dashboard')
-            
             today = timezone.now().date()
             selected_date = request.session.get('selected_date', today.strftime("%Y-%m-%d"))
             selected_date = timezone.datetime.strptime(selected_date, "%Y-%m-%d").date()
-            
-            try:
-                with pyodbc.connect(
-                    'Driver={SQL Server};'
-                    'Server=DESKTOP-FEURJVI;'
-                    'Database=DATAIOCL;'
-                    'Trusted_Connection=yes;'
-                ) as conn:
-                    cursor = conn.cursor()
-                    query = "SELECT * FROM MonitorDataTbl WHERE CAST(PunchDate AS DATE) = ?"
-                    cursor.execute(query, selected_date.strftime('%Y-%m-%d'))
-                    rows = cursor.fetchall()
-                    
-                    for row in rows:
-                        try:
-                            data_dict = {
-                                'SRNO': row[0],
-                                'EnrollID': row[1],
-                                'PunchDate': row[2].strftime("%Y-%m-%d %H:%M:%S"),
-                                'TRID': row[3],
-                                'id': row[4],
-                                'SEND_SERVER': row[5],
-                                'RESEND_SERVER': row[6],
-                            }
-                            MonitorData.objects.get_or_create(
-                                SRNO=data_dict['SRNO'],
-                                EnrollID=data_dict['EnrollID'],
-                                PunchDate=data_dict['PunchDate'],
-                                defaults={'Errorstatus': '0'},
-                            )
-                        except Exception as e:
-                            logger.error(f"Error processing row {row}: {e}")
-            except pyodbc.Error as e:
-                logger.error(f"Database connection or query failed: {e}")
-                return JsonResponse({"error": "Database connection failed"}, status=500)
             try:
                 livedata = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')[:13]
                 data = []
@@ -431,22 +402,15 @@ def live_data(request):
 
 
 
+class CustomLogoutView(LogoutView):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == "GET":
+            request.session.flush()  # Clear session data
+            return redirect('home')  # Redirect to the home page
+        return super().dispatch(request, *args, **kwargs)
 
-def login_view(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            return JsonResponse({'success': True, 'redirect_url': '/dashboard/'})
-        else:
-            return JsonResponse({'success': False, 'message': 'Invalid credentials'})
-    return render(request, 'pages/list.html')
-def logout_view(request):
-    logout(request)
-    return redirect('list')
-
+@login_required(login_url='/')
 def listss(request, lists):
     if request.session.get('previous_date'):
         selected_date = request.session.get('previous_date', None)
@@ -657,6 +621,7 @@ def index(request,listing):
     # Page from the theme 
     return render(request, 'pages/index.html',{'data':listing})
 
+@login_required(login_url='/')
 def report(request):
     today = timezone.now().date()
     form = DayForm(request.POST or None)
@@ -719,7 +684,7 @@ def report(request):
     context['data'] = data
     return render(request, 'pages/report.html', context)
   
-@login_required
+@login_required(login_url='/')
 def dashboard(request):
     request.session['login'] = 'adminlogin'
     
@@ -735,7 +700,7 @@ def dashboard(request):
     }
 
     return render(request, 'pages/dashboard.html', context)
-    
+@login_required(login_url='/')    
 def depart_master(request):
     if request.method == 'POST':
         departName = request.POST.get('departName')
@@ -749,6 +714,7 @@ def depart_master(request):
     }
     return render(request,'pages/depart_master.html',context)
 
+@login_required(login_url='/')
 def edit_depart(request, pk):
     department = get_object_or_404(DepartMast, pk=pk)
     if request.method == 'POST':
@@ -760,12 +726,13 @@ def edit_depart(request, pk):
         form = DepartForm(instance=department)
     return render(request, 'pages/edit_depart.html', {'form': form})
 
+@login_required(login_url='/')
 def delete_depart(request, pk):
     department = get_object_or_404(DepartMast, pk=pk)
     department.delete()
     return redirect('depart_master')
 
-
+@login_required(login_url='/')
 def emp_master(request):
     if request.method == 'POST':
         empcode = request.POST.get('empcode')
@@ -828,6 +795,7 @@ def emp_master(request):
 
     return render(request, 'pages/emp_master.html', context)
 
+@login_required(login_url='/')
 def get_departments_by_enrollid(request):
     enrollid = request.GET.get('enrollid')
     if enrollid:
@@ -839,6 +807,8 @@ def get_departments_by_enrollid(request):
         except EnrollMast.DoesNotExist:
             return JsonResponse({'error': 'Invalid EnrollID'}, status=400)
     return JsonResponse({'error': 'No EnrollID provided'}, status=400)
+
+@login_required(login_url='/')    
 def get_enrollid_by_department(request):
     depart_id = request.GET.get('DepartId')
     if depart_id:
@@ -857,6 +827,7 @@ def get_enrollid_by_department(request):
             return JsonResponse({'error': str(e)}, status=400)  # Catching a general exception for simplicity
     return JsonResponse({'error': 'No DepartmentID provided'}, status=400)
 
+@login_required(login_url='/')
 def edit_employee(request, pk):
     employe = get_object_or_404(EmpMast, pk=pk)
     if request.method == 'POST':
@@ -891,12 +862,15 @@ def edit_employee(request, pk):
         'departlist': departlist,
         'designation_dict': designation_dict,
     })
-
+@csrf_exempt 
+@login_required(login_url='/')
 def delete_employee(request, pk):
     employee = get_object_or_404(EmpMast, pk=pk)
     employee.delete()
     return redirect('emp_master')
 
+@csrf_exempt 
+@login_required(login_url='/')
 def enroll_mast(request):
     if request.method == 'POST':
         DepartId = request.POST.get('DepartId')
@@ -945,12 +919,14 @@ def enroll_mast(request):
     }
 
     return render(request, 'pages/enroll_mast.html', context)
-
+@csrf_exempt 
+@login_required(login_url='/')
 def delete_enroll(request, pk):
     employee = get_object_or_404(EnrollMast, pk=pk)
     employee.delete()
     return redirect('enroll_mast')
-
+@csrf_exempt 
+@login_required(login_url='/')
 def des_master(request):
     if request.method == 'POST':
         DepartId = request.POST.get('DepartId')
@@ -968,7 +944,8 @@ def des_master(request):
     }
     return render(request,'pages/des_master.html',context)
     
-
+@csrf_exempt 
+@login_required(login_url='/')
 def edit_designation(request, pk):
     designation = get_object_or_404(DesMast, pk=pk)
     if request.method == 'POST':
@@ -983,12 +960,15 @@ def edit_designation(request, pk):
         form = DesForm(instance=designation)
     departlist = DepartMast.objects.all()
     return render(request, 'pages/edit_designation.html', {'form': form, 'departlist': departlist})
-
+@csrf_exempt 
+@login_required(login_url='/')
 def delete_designation(request, pk):
     designation = get_object_or_404(DesMast, pk=pk)
     designation.delete()
     return redirect('des_master')
 
+@csrf_exempt 
+@login_required(login_url='/')
 def comp_master(request):
     if request.method == 'POST':
         Company = request.POST.get('Company')
@@ -1003,6 +983,8 @@ def comp_master(request):
     }
     return render(request,'pages/comp_master.html',context)
 
+@csrf_exempt 
+@login_required(login_url='/')
 def edit_company(request, pk):
     company = get_object_or_404(CompanyMast, pk=pk)
     if request.method == 'POST':
@@ -1014,11 +996,15 @@ def edit_company(request, pk):
         form = CompanyForm(instance=company)
     return render(request, 'pages/edit_company.html', {'form': form})
 
+@csrf_exempt 
+@login_required(login_url='/')
 def delete_company(request, pk):
     company = get_object_or_404(CompanyMast, pk=pk)
     company.delete()
     return redirect('comp_master')
 
+@csrf_exempt 
+@login_required(login_url='/')
 def machine_master(request):
     if request.method == 'POST':
         machineno = request.POST.get('machineno')
@@ -1035,6 +1021,8 @@ def machine_master(request):
         'machine_list': machine_list
     }
     return render(request,'pages/machine_master.html',context)
+@csrf_exempt 
+@login_required(login_url='/')
 def edit_machine(request, pk):
     machine = get_object_or_404(MachineMast, pk=pk)
     if request.method == 'POST':
@@ -1045,13 +1033,15 @@ def edit_machine(request, pk):
     else:
         form = MachineForm(instance=machine)
     return render(request, 'pages/edit_machine.html', {'form': form})
-
+@csrf_exempt 
+@login_required(login_url='/')
 def delete_machine(request, pk):
     machine = get_object_or_404(MachineMast, pk=pk)
     machine.delete()
     return redirect('machine_master')
 
-
+@csrf_exempt 
+@login_required(login_url='/')
 def category(request):
     today = timezone.now().date()
     form = DateForm(request.POST or None)
@@ -1134,7 +1124,8 @@ def category(request):
     }
     return render(request, 'pages/category.html', context)
 
-
+@csrf_exempt 
+@login_required(login_url='/')
 def con_mismatch(request):
     today = timezone.now().date()
     form = DateForm(request.POST or None)
@@ -1228,6 +1219,8 @@ def upload_employee_data(request):
         form = UploadEmployeeForm()
 
     return render(request, 'pages/upload_employee.html', {'form': form})
+@csrf_exempt 
+@login_required(login_url='/')
 def in_console(request):
     today = timezone.now().date()
     form = DateForm(request.POST or None)
@@ -1299,3 +1292,126 @@ def in_console(request):
     }
 
     return render(request, 'pages/in_console.html', context)
+@csrf_exempt
+def vistor(request):
+    if request.user.is_authenticated:
+        return redirect('/dashboard_visitor/')
+    return render(request, 'pages/visitor_login.html')
+@csrf_exempt
+def login_visitor(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return JsonResponse({'success': True, 'redirect_url': '/dashboard_visitor/'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Invalid credentials'})
+    return render(request, 'pages/visitor_login.html')
+
+@login_required(login_url='/')
+def dashboard_visitor(request):
+    request.session['login'] = 'adminlogin'
+    autovisitorout()
+    return render(request, 'pages/visitor_dashboard.html')
+@method_decorator(csrf_exempt, name='dispatch')
+class CustomLogoutVisitor(LogoutView):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == "GET":
+            request.session.flush()  # Clear session data
+            return redirect('vistor')
+        return super().dispatch(request, *args, **kwargs)
+@login_required(login_url='/')
+def visitor_out(request):
+    # Fetch all gate passes where outTime is NULL and status is 'true'
+    gatepasses = GatePass.objects.filter(outTime__isnull=True, status='true')
+
+    return render(request, 'pages/visitor_out.html', {'gatepasses': gatepasses})
+@login_required(login_url='/')
+def visitor_report(request):
+    today = timezone.now().date()
+    selected_date = request.GET.get('selected_date', today)
+    filter_type = request.POST.get('flexRadioDefault', 'dateWise')
+
+    # Default filter for today's records
+    livedatas = GatePass.objects.filter(date=today)
+
+    if request.method == "POST":
+        selected_date = request.POST.get('selected_date', today)
+        print(selected_date)
+        if filter_type == 'dateWise' and selected_date:
+            livedatas = GatePass.objects.filter(date=selected_date)
+        elif filter_type == 'gateWise' and selected_date:
+            gate_id = request.POST.get('location')
+            if gate_id:
+                livedatas = GatePass.objects.filter(allowing_entry=gate_id, date=selected_date)
+
+    # Convert `inTime` and `outTime` from string to 12-hour format
+    for gatepass in livedatas:
+        if gatepass.inTime:
+            try:
+                gatepass.inTime = datetime.datetime.strptime(gatepass.inTime, "%H:%M:%S").strftime("%I:%M:%S %p")
+
+            except ValueError:
+                pass  # Ignore errors
+
+        if gatepass.outTime:
+            try:
+                gatepass.outTime = datetime.datetime.strptime(gatepass.outTime, "%H:%M:%S").strftime("%I:%M:%S %p")
+            except ValueError:
+                pass
+
+    # Ensure `context` is always defined
+    context = {
+        'selected_date': selected_date,
+        'today': today,
+        'filter_type': filter_type,
+        'data': livedatas,  
+    }
+
+    return render(request, 'pages/visitor_report.html', context)
+@csrf_exempt 
+@login_required(login_url='/')
+def update_gatepass_status(request, gatepass_id):
+    gatepass = get_object_or_404(GatePass, id=gatepass_id)
+    if request.method == "POST":
+        remarks = request.POST.get("remarks", "")  # Get remarks from form
+        gatepass.status = 'true'
+        gatepass.outTime = datetime.datetime.now().strftime("%H:%M:%S")  # Save current time
+        gatepass.remarks = remarks  # Save remarks
+        gatepass.save()
+
+        return redirect('visitor_out')  # Redirect after updating
+    else:
+        # Optional: If method is not POST, you can show a message or redirect elsewhere.
+        return HttpResponse("Invalid request method", status=400)
+
+def autovisitorout():
+    today = timezone.now().date()
+    gatepasses = GatePass.objects.filter(
+        outTime__isnull=True,
+        valid_to__lt=today
+    )
+
+    for gatepass in gatepasses:
+        # Set outTime to valid_to date with 8:00 PM time
+        out_datetime = datetime.datetime.combine(gatepass.valid_to, time(20, 0))
+        gatepass.outTime = out_datetime.strftime('%Y-%m-%d %H:%M:%S')
+
+        gatepass.status = 'true'
+        gatepass.remarks = "Machine Out"
+        gatepass.save()
+def auto_report(request):
+    today = timezone.localdate()
+    # today = date(2025, 3, 31)
+    for i in range(1, 11):  # Exclude today, so start from 1
+        dt = today - timedelta(days=i)
+
+        # Check if report already exists
+        if not ReportLog.objects.filter(date=dt).exists():
+            print(f"No report found for {dt}, generating now...")
+            generate_report_for_date(dt)
+        else:
+            return HttpResponse(f"Report already exists for {dt}")

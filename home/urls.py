@@ -5,17 +5,24 @@ from django.conf.urls.static import static
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.views import LogoutView
+from .views import CustomLogoutView,CustomLogoutVisitor
 
 urlpatterns = [
-    path('', views.home, name='home'),
-    path('login/', views.login_view, name='login'),
+    path('auto-report/', views.auto_report, name='auto_report'),
+    path('headcount/', views.home, name='home'),
+    path('', views.vistor, name='vistor'),
+    path('login_visitor/', views.login_visitor, name='login_visitor'),
+    path('dashboard_visitor/', views.dashboard_visitor, name='dashboard_visitor'),
     path('live_data/', views.live_data, name='live_data'),
-    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+    path('headcount/logout/', CustomLogoutView.as_view(next_page='login'), name='logout'),
+    path('logout_visitor/', CustomLogoutVisitor.as_view(next_page='login_visitor'),name= 'logout_visitor'),
     path('index/<str:listing>', views.index, name='index'),
-    path('list/<str:lists>', views.listss, name='list'),
-    path('report/', views.report, name='report'),
+    path('headcount/list/<str:lists>', views.listss, name='list'),
+    path('headcount/report/', views.report, name='report'),
     path('dashboard/',views.dashboard, name='dashboard'),
-    path('depart_master/',views.depart_master, name='depart_master'),
+    path('visitor_report/',views.visitor_report,name='visitor_report'),
+    path('visitor_out/', views.visitor_out, name='visitor_out'),
+    path('headcount/depart_master/',views.depart_master, name='depart_master'),
     path('edit/<int:pk>/', views.edit_depart, name='edit_depart'),
     path('delete/<int:pk>/', views.delete_depart, name='delete_depart'),
     path('emp_master/',views.emp_master, name='emp_master'),
