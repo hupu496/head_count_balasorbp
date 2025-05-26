@@ -403,7 +403,7 @@ display: block;
         <div class="form-group">
           <label style="color:black; font-weight: 500;">Select Card (IN visitors not yet OUT)</label>
          <select id="outCardSelect" name="cardNo" class="form-control">
-          {% for entry in open_cards %}
+          {% for entry in open_cards_trid1 %}
           <option value="{{ entry.cardNo }}" style="color:black;">{{ entry.cardNo }} - {{ entry.name }}</option>
           {% endfor %}
         </select>
@@ -485,7 +485,7 @@ display: block;
         <div class="form-group">
           <label style="color:black; font-weight: 500;">Select Card (IN visitors not yet OUT)</label>
          <select id="outCardSelectg" name="cardNo" class="form-control">
-          {% for entry in open_cards %}
+          {% for entry in open_cards_trid3 %}
           <option value="{{ entry.cardNo }}" style="color:black;">{{ entry.cardNo }} - {{ entry.name }}</option>
           {% endfor %}
         </select>

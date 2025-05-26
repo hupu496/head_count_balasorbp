@@ -260,6 +260,22 @@ def home(request):
         Q(outTime__isnull=True) | Q(outTime=''),
         valid_to__gte=today
     )
+    card_nos = open_cards.values_list('cardNo', flat=True)
+    
+    trid1_card_nos = MonitorData.objects.filter(
+    PunchDate__date=today,  # <-- This is key
+    TRID='1',
+    EnrollID__in=card_nos
+    ).values_list('EnrollID', flat=True)
+
+    trid3_card_nos = MonitorData.objects.filter(
+        PunchDate__date=today,
+        TRID='3',
+        EnrollID__in=card_nos
+    ).values_list('EnrollID', flat=True)
+        # Filter open_cards for each TRID group
+    open_cards_trid1 = open_cards.filter(cardNo__in=trid1_card_nos)
+    open_cards_trid3 = open_cards.filter(cardNo__in=trid3_card_nos)
     total_non_hazard_head_count = non_hazard_in - non_hazard_out
     total_hazard_head_count = hazard_in_count - hazard_out_count
         
@@ -277,7 +293,8 @@ def home(request):
         'non_hazard_in': non_hazard_in,
         'non_hazard_out': non_hazard_out,
         'non_hazard_total': total_non_hazard_head_count,
-        'open_cards': open_cards,
+        'open_cards_trid1': open_cards_trid1,
+        'open_cards_trid3': open_cards_trid3,
         
     }
     return render(request, 'pages/index1.html', context)
