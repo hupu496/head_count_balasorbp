@@ -65,6 +65,28 @@ display: block;
 {% block title %} IOCL | Head Count System {% endblock title %}
 {% block body %} class="index-page bg-gray-200" {% endblock body %}
 {% block content %}
+{% if messages %}
+  {% for message in messages %}
+  {% if message.tags == 'success' %}
+    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert" style="margin-bottom: 35px;">
+         <span class="alert-icon text-white"><i class="ni ni-like-2"></i></span>
+        <span class="alert-text text-white"><strong>Success!</strong>{{ message }}</span>
+     
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+      </button>
+    </div>
+    {% else %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="margin-bottom: 35px;">
+    <span class="alert-icon text-white"><i class="ni ni-like-2"></i></span>
+    <span class="alert-text text-white"><strong>Error!</strong> {{ message }}</span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endif %}
+  {% endfor %}
+{% endif %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript">
    $(document).ready(function () {
@@ -168,6 +190,7 @@ display: block;
                               <h4 class="text-gradient text-primary" style="
     font-size: 40px;
 "></i>MAIN GATE</h4>
+<button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#mainModal">Main Gate Visitor</button>
                            </div>
                         </div>
                         <hr class="vertical dark">
@@ -240,6 +263,7 @@ display: block;
                            <div >
                               <h4 class="text-gradient text-primary" style="
     font-size: 40px;"></i>GATE3</h4>
+   <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#gate3Modal">Gate 3 Visitor</button>
                            </div>
                         </div>
                         <hr class="vertical dark">
@@ -320,6 +344,169 @@ display: block;
       </div>
    </div>
 </div>
+<!-- modal -->
+<div class="modal fade" id="mainModal" tabindex="-1" aria-labelledby="mainModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="POST" action="{% url 'gatepass_view' %}">
+         {% csrf_token %}
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="mainModalLabel">Main Gate Visitor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+       
+     <div class="form-group">
+    <label>Entry Type:</label><br>
+    <input type="radio" name="entry_type" value="in" id="inRadio" checked> IN
+    <input type="radio" name="entry_type" value="out" id="outRadio"> OUT
+  </div>
+
+  
+  <div id="inSection">
+  <div class="row">
+      <div class="col-md-6">
+      <div class="form-group">
+      <div class="input-group input-group-outline is-valid my-3">
+        <label class="form-label">No Of Vistors <span style="color:red;">*</span></label>
+      <input type="number" id="noOfVisitors" name="noOfPerson" class="form-control" value="1" min="1">
+      </div>
+    </div>
+    <div id="visitorNames" class="input-group-outline "></div>
+    </div>
+  
+    <div class="col-md-6">
+      <div class="form-group">
+      <div class="input-group input-group-outline is-valid my-3">
+      <label class="form-label">Pass No(optional)</label>
+      <input type="text" name="passNo" class="form-control" >
+    </div>
+    </div>
+    </div>
+    <div class="col-md-6">
+      <div class="form-group">
+         <div class="input-group input-group-outline is-valid my-3">
+      <!-- <label  class="form-label">Date</label> -->
+      <input type="date" name="date" id="dateField" class="form-control" readonly>
+      </div>
+    </div>
+    </div>
+
+    </div>  
+  </div>
+  <div id="outSection" style="display:none;">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="form-group">
+          <label>Select Card (IN visitors not yet OUT)</label>
+         <select id="outCardSelect" name="cardNo" class="form-control">
+          {% for entry in open_cards %}
+          <option value="{{ entry.cardNo }}">{{ entry.cardNo }} - {{ entry.name }}</option>
+          {% endfor %}
+        </select>
+
+        </div>
+      </div>
+      <div class="col-md-6">
+         <div class="form-group">
+          <label>Visitor Name</label>
+          <input type="text" id="outName" class="form-control" readonly>
+      </div>
+    </div>
+    </div>
+   </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Close</button>
+         <button type="submit" class="btn btn-warning">Submit</button>
+      </div>
+    </div>
+    </form>
+  </div>
+</div>
+
+<!-- Button trigger modal -->
+<div class="modal fade" id="gate3Modal" tabindex="-1" aria-labelledby="gate3ModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+   <form method="POST" action="{% url 'gatepass_viewout' %}">
+         {% csrf_token %}
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="mainModalLabel">Gate3 Visitor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+       
+     <div class="form-group">
+    <label>Entry Type:</label><br>
+    <input type="radio" name="entry_type" value="in" id="inRadiog" checked> IN
+    <input type="radio" name="entry_type" value="out" id="outRadiog"> OUT
+  </div>
+
+  
+  <div id="inSectiong">
+  <div class="row">
+      <div class="col-md-6">
+      <div class="form-group">
+      <div class="input-group input-group-outline is-valid my-3">
+        <label class="form-label">No Of Vistors <span style="color:red;">*</span></label>
+      <input type="number" id="noOfVisitorsg" name="noOfPerson" class="form-control" value="1" min="1">
+      </div>
+    </div>
+    <div id="visitorNamesg" class="input-group-outline "></div>
+    </div>
+  
+    <div class="col-md-6">
+      <div class="form-group">
+      <div class="input-group input-group-outline is-valid my-3">
+      <label class="form-label">Pass No(optional)</label>
+      <input type="text" name="passNo" class="form-control" >
+    </div>
+    </div>
+    </div>
+    <div class="col-md-6">
+      <div class="form-group">
+         <div class="input-group input-group-outline is-valid my-3">
+      <label  class="form-label">Date</label>
+      <input type="date" name="date" id="dateFieldg" class="form-control" readonly>
+      </div>
+    </div>
+    </div>
+
+    </div>  
+  </div>
+  <div id="outSectiong" style="display:none;">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="form-group">
+          <label>Select Card (IN visitors not yet OUT)</label>
+         <select id="outCardSelectg" name="cardNo" class="form-control">
+          {% for entry in open_cards %}
+          <option value="{{ entry.cardNo }}">{{ entry.cardNo }} - {{ entry.name }}</option>
+          {% endfor %}
+        </select>
+
+        </div>
+      </div>
+      <div class="col-md-6">
+         <div class="form-group">
+          <label>Visitor Name</label>
+          <input type="text" id="outNameg" class="form-control" readonly>
+      </div>
+    </div>
+    </div>
+   </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Close</button>
+         <button type="submit" class="btn btn-warning">Submit</button>
+      </div>
+    </div>
+    </form>
+  </div>
+</div>
 <!-- <p>{{ context }}</p> -->
 {% endblock content %}
 {% block javascripts %}
@@ -333,33 +520,119 @@ display: block;
 <script src="{% static 'js/plugins/tilt.min.js' %}"></script>
 <!--  Plugin for Selectpicker - ChoicesJS, full documentation here: https://github.com/jshjohnson/Choices -->
 <script src="{% static 'js/plugins/choices.min.js' %}"></script>
-<script type="text/javascript">
-    // Get the current time
-    const now = new Date();
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const formattedDate = `${yyyy}-${mm}-${dd}`;
 
-    // Set the target refresh time to 12:00 AM
-    const midnight = new Date();
-    midnight.setHours(1, 0, 0, 0); // Set to 12:00 AM of today
+    document.getElementById("dateField").value = formattedDate;
+    document.getElementById("dateFieldg").value = formattedDate;
+  });
+</script>
 
-    // Set the stop refresh time to 12:01 AM
-    const stopRefreshTime = new Date();
-    stopRefreshTime.setHours(1, 5, 0, 0); // Set to 12:01 AM of today
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const inRadio = document.getElementById('inRadio');
+  const outRadio = document.getElementById('outRadio');
+  const inSection = document.getElementById('inSection');
+  const outSection = document.getElementById('outSection');
+  const noOfVisitors = document.getElementById('noOfVisitors');
+  const visitorNames = document.getElementById('visitorNames');
+  const outCardSelect = document.getElementById('outCardSelect');
+  const outName = document.getElementById('outName');
 
-    // Check if the current time is before 12:01 AM
-    if (now < stopRefreshTime) {
-        const timeUntilMidnight = midnight - now;
-
-        // Only set a timeout if the current time is before 12:01 AM
-        if (timeUntilMidnight > 0) {
-            setTimeout(() => {
-                location.reload();
-            }, timeUntilMidnight);
-        } else {
-            console.log("It's already past midnight; no refresh will occur.");
-        }
-    } else {
-        console.log("It's already 12:01 AM or later; no refresh will occur.");
+  function generateVisitorFields(count) {
+    visitorNames.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = `name_${i + 1}`;
+      input.className = 'form-control mb-2';
+      input.placeholder = `Visitor ${i + 1} Name`;
+      visitorNames.appendChild(input);
     }
+  }
+
+  noOfVisitors.addEventListener('input', () => {
+    generateVisitorFields(parseInt(noOfVisitors.value));
+  });
+
+  inRadio.addEventListener('change', () => {
+    if (inRadio.checked) {
+      inSection.style.display = 'block';
+      outSection.style.display = 'none';
+    }
+  });
+
+  outRadio.addEventListener('change', () => {
+    if (outRadio.checked) {
+      inSection.style.display = 'none';
+      outSection.style.display = 'block';
+    }
+  });
+
+  outCardSelect.addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex].text;
+    const name = selected.split(' - ')[1];
+    outName.value = name;
+  });
+
+  generateVisitorFields(1); // default on load
+});
+</script>
+<!-- gate 3 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const inRadio = document.getElementById('inRadiog');
+  const outRadio = document.getElementById('outRadiog');
+  const inSection = document.getElementById('inSectiong');
+  const outSection = document.getElementById('outSectiong');
+  const noOfVisitors = document.getElementById('noOfVisitorsg');
+  const visitorNames = document.getElementById('visitorNamesg');
+  const outCardSelect = document.getElementById('outCardSelectg');
+  const outName = document.getElementById('outNameg');
+
+  function generateVisitorFieldsg(count) {
+    visitorNames.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = `name_${i + 1}`;
+      input.className = 'form-control mb-2';
+      input.placeholder = `Visitor ${i + 1} Name`;
+      visitorNames.appendChild(input);
+    }
+  }
+
+  noOfVisitors.addEventListener('input', () => {
+    generateVisitorFieldsg(parseInt(noOfVisitors.value));
+  });
+
+  inRadio.addEventListener('change', () => {
+    if (inRadio.checked) {
+      inSection.style.display = 'block';
+      outSection.style.display = 'none';
+    }
+  });
+
+  outRadio.addEventListener('change', () => {
+    if (outRadio.checked) {
+      inSection.style.display = 'none';
+      outSection.style.display = 'block';
+    }
+  });
+
+  outCardSelect.addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex].text;
+    const name = selected.split(' - ')[1];
+    outName.value = name;
+  });
+
+  generateVisitorFieldsg(1); // default on load
+});
 </script>
 
 <script type="text/javascript">

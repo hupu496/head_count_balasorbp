@@ -27,21 +27,3 @@
   <!--  Google Maps Plugin    -->
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTTfWur0PDbZWPr7Pmq8K3jiDp0_xUziI"></script>
   <script src="{% static 'js/material-kit.min.js' %}" type="text/javascript"></script>
-   <script>
-    function callAutoReport() {
-        fetch("{% url 'auto_report' %}", {
-            method: "GET",
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        }).then(response => response.json())
-        .then(data => {
-            console.log("AutoReport:", data.message);
-        });
-    }
-    //  setInterval(callAutoReport,2000);
-    // Run every 3 hours
-    setInterval(callAutoReport, 3 * 60 * 60 * 1000);
-    // Optionally run once on page load
-    callAutoReport();
-</script>

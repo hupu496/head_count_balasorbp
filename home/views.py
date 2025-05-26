@@ -39,6 +39,8 @@ logger = logging.getLogger(__name__)
 
 @login_required(login_url='/')
 def home(request):
+    if request.user.is_authenticated:
+        autovisitorout()
     today = timezone.now().date()
     form = DateForm(initial={"selected_date": today})
     selected_date = today
@@ -250,6 +252,10 @@ def home(request):
             {"Department": dept, "HeadCount": max(0, hazardous_departments.get(dept, 0))}
             for dept in all_departments
         ]
+    open_cards = GatePass.objects.filter(
+        Q(outTime__isnull=True) | Q(outTime=''),
+        valid_to__gte=today
+    )
     total_non_hazard_head_count = non_hazard_in - non_hazard_out
     total_hazard_head_count = hazard_in_count - hazard_out_count
         
@@ -267,6 +273,7 @@ def home(request):
         'non_hazard_in': non_hazard_in,
         'non_hazard_out': non_hazard_out,
         'non_hazard_total': total_non_hazard_head_count,
+        'open_cards': open_cards,
         
     }
     return render(request, 'pages/index1.html', context)
@@ -371,15 +378,15 @@ def live_data(request):
                     elif machine.machineno in ['4', '8']:  # Hazard Out
                         hazardous_departments[department_name] -= 1
                     
-                    non_hazardous_data = [
-                        {"Department": dept, "HeadCount": max(0, non_hazardous_departments.get(dept, 0))}
-                        for dept in all_departments
-                    ]
+                non_hazardous_data = [
+                    {"Department": dept, "HeadCount": max(0, non_hazardous_departments.get(dept, 0))}
+                    for dept in all_departments
+                ]
 
-                    hazardous_data = [
-                        {"Department": dept, "HeadCount": max(0, hazardous_departments.get(dept, 0))}
-                        for dept in all_departments
-                    ]
+                hazardous_data = [
+                    {"Department": dept, "HeadCount": max(0, hazardous_departments.get(dept, 0))}
+                    for dept in all_departments
+                ]
             except Exception as e:
                 logger.error(f"Error processing department data: {e}")
                 return JsonResponse({"error": "Error processing department data"}, status=500)
@@ -766,7 +773,6 @@ def emp_master(request):
     complist = CompanyMast.objects.all()
     designationlist = DesMast.objects.select_related('department').all()
     employeedatalist = EmpMast.objects.select_related('department', 'company', 'designation', 'enrollid')
-
     employeedata_list = [{'counter': i + 1, 'employeelist': employeelist} for i, employeelist in enumerate(employeedatalist)]
     existing_enroll_ids = EmpMast.objects.values_list('enrollid_id', flat=True)
     enrollid_queryset = EnrollMast.objects.exclude(id__in=existing_enroll_ids)
@@ -1295,7 +1301,7 @@ def in_console(request):
 @csrf_exempt
 def vistor(request):
     if request.user.is_authenticated:
-        return redirect('/dashboard_visitor/')
+        return redirect('/headcount/')
     return render(request, 'pages/visitor_login.html')
 @csrf_exempt
 def login_visitor(request):
@@ -1305,16 +1311,19 @@ def login_visitor(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return JsonResponse({'success': True, 'redirect_url': '/dashboard_visitor/'})
+            autovisitorout()
+            return JsonResponse({'success': True, 'redirect_url': '/headcount/'})
         else:
             return JsonResponse({'success': False, 'message': 'Invalid credentials'})
     return render(request, 'pages/visitor_login.html')
 
-@login_required(login_url='/')
-def dashboard_visitor(request):
-    request.session['login'] = 'adminlogin'
-    autovisitorout()
-    return render(request, 'pages/visitor_dashboard.html')
+# @login_required(login_url='/')
+# def dashboard_visitor(request):
+#     request.session['login'] = 'adminlogin'
+#     autovisitorout()
+#     return render(request, 'pages/visitor_dashboard.html')
+
+    
 @method_decorator(csrf_exempt, name='dispatch')
 class CustomLogoutVisitor(LogoutView):
     @method_decorator(csrf_exempt)
@@ -1327,7 +1336,6 @@ class CustomLogoutVisitor(LogoutView):
 def visitor_out(request):
     # Fetch all gate passes where outTime is NULL and status is 'true'
     gatepasses = GatePass.objects.filter(outTime__isnull=True, status='true')
-
     return render(request, 'pages/visitor_out.html', {'gatepasses': gatepasses})
 @login_required(login_url='/')
 def visitor_report(request):
@@ -1394,15 +1402,205 @@ def autovisitorout():
         outTime__isnull=True,
         valid_to__lt=today
     )
-
     for gatepass in gatepasses:
         # Set outTime to valid_to date with 8:00 PM time
-        out_datetime = datetime.datetime.combine(gatepass.valid_to, time(20, 0))
+        out_datetime = datetime.combine(gatepass.valid_to, time(20, 0))
         gatepass.outTime = out_datetime.strftime('%Y-%m-%d %H:%M:%S')
-
         gatepass.status = 'true'
         gatepass.remarks = "Machine Out"
         gatepass.save()
+def gatepass_view(request):
+    if request.method == "POST":
+        entry_type = request.POST.get("entry_type")
+        if entry_type == "in":
+            passNo = request.POST.get("passNo")
+            no_of_person = int(request.POST.get("noOfPerson"))
+            date_today = date.today()
+            try:
+                visitor_department = DepartMast.objects.only('DepartId').get(DepartName__iexact="VISITOR")
+            except DepartMast.DoesNotExist:
+                messages.error(request, 'Visitor department not found.')
+                return render(request, 'pages/new_entry_visitor.html', {})
+            all_enrolls = EnrollMast.objects.filter(department=visitor_department.DepartId).only('enrollid')
+            # --- STEP 2: Create GatePass entries for each visitor ---
+            for i in range(1, no_of_person + 1):
+                name = request.POST.get(f"name_{i}")
+                used_enrollids = GatePass.objects.filter(valid_to__date__gte=today).values_list('cardNo', flat=True)
+                available_enrolls = all_enrolls.exclude(enrollid__in=used_enrollids)
+                # Assign first available enrollid as card_no
+                card_no = available_enrolls.first().enrollid
+                GatePass.objects.create(
+                    cardNo=card_no,
+                    passNo=passNo,
+                    date=date_today,
+                    name=name,
+                    valid_from=date_today,
+                    valid_to=date_today,
+                    inTime=datetime.now().strftime("%H:%M:%S"),
+                )
+                try:
+                    department_instance = DepartMast.objects.get(DepartId=11)
+                    company_instance = CompanyMast.objects.get(CompanyId=1)
+                    designation_instance = DesMast.objects.get(Desgid=11)
+                    enroll_instance = EnrollMast.objects.get(enrollid=card_no)
+
+                    try:
+                        emp_record = EmpMast.objects.get(empcode=card_no)
+                        emp_record.Name = name
+                        emp_record.enrollid = enroll_instance
+                        emp_record.department = department_instance
+                        emp_record.company = company_instance
+                        emp_record.designation = designation_instance
+                        emp_record.save()
+                    except EmpMast.DoesNotExist:
+                        last_emp_id = EmpMast.objects.aggregate(max_id=Max('ids'))['max_id'] or 0
+                        EmpMast.objects.create(
+                            ids=last_emp_id + 1,
+                            empcode=card_no,
+                            enrollid=enroll_instance,
+                            Name=name,
+                            department=department_instance,
+                            company=company_instance,
+                            designation=designation_instance
+                        )
+                    # --- STEP 4: Create MonitorData Punch Entry ---
+                    previous_srnos = MachineMast.objects.filter(machineno='1').values_list('SRNO', flat=True).first()
+                    adjusted_punchtime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    last_monitor_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
+                    MonitorData.objects.create(
+                        id=last_monitor_id + 1,
+                        EnrollID=card_no,
+                        PunchDate=adjusted_punchtime,
+                        SRNO=previous_srnos,
+                        TRID='1',
+                        Errorstatus=2
+                    )
+                except Exception as e:
+                    messages.error(request, f"Error creating employee record: {str(e)}")
+
+            messages.success(request, 'Visitor(s) added successfully!')
+            return redirect('home')
+
+        elif entry_type == "out":
+            today = timezone.now().date()
+            card_no = request.POST.get("cardNo")
+            gatepass = GatePass.objects.filter(cardNo=card_no, outTime__isnull=True,valid_to__gte=today).first()
+            if gatepass:
+                gatepass.outTime = timezone.now().strftime("%H:%M:%S")
+                gatepass.save()
+                previous_srnos = MachineMast.objects.filter(machineno='2').values_list('SRNO', flat=True).first()
+                adjusted_punchtime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                last_monitor_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
+                MonitorData.objects.create(
+                    id=last_monitor_id + 1,
+                    EnrollID=card_no,
+                    PunchDate=adjusted_punchtime,
+                    SRNO=previous_srnos,
+                    TRID='2',
+                    Errorstatus=2
+                )
+
+                messages.success(request, 'Visitor marked as OUT successfully!')
+            else:
+                messages.error(request, 'No active visitor entry found for this card.')
+            return redirect('home')
+def gatepass_viewout(request):
+    if request.method == "POST":
+        entry_type = request.POST.get("entry_type")
+        if entry_type == "in":
+            today = timezone.now().date()
+            passNo = request.POST.get("passNo")
+            no_of_person = int(request.POST.get("noOfPerson"))
+            date_today = date.today()
+            try:
+                visitor_department = DepartMast.objects.only('DepartId').get(DepartName__iexact="VISITOR")
+            except DepartMast.DoesNotExist:
+                messages.error(request, 'Visitor department not found.')
+                return render(request, 'pages/new_entry_visitor.html', {})
+            all_enrolls = EnrollMast.objects.filter(department=visitor_department.DepartId).only('enrollid')
+            # --- STEP 2: Create GatePass entries for each visitor ---
+            for i in range(1, no_of_person + 1):
+                name = request.POST.get(f"name_{i}")
+                used_enrollids = GatePass.objects.filter(valid_to__date__gte=today).values_list('cardNo', flat=True)
+                available_enrolls = all_enrolls.exclude(enrollid__in=used_enrollids)
+                # Assign first available enrollid as card_no
+                card_no = available_enrolls.first().enrollid
+                GatePass.objects.create(
+                    cardNo=card_no,
+                    passNo=passNo,
+                    date=date_today,
+                    name=name,
+                    valid_from=date_today,
+                    valid_to=date_today,
+                    inTime=datetime.now().strftime("%H:%M:%S"),
+                )
+                try:
+                    department_instance = DepartMast.objects.get(DepartId=11)
+                    company_instance = CompanyMast.objects.get(CompanyId=1)
+                    designation_instance = DesMast.objects.get(Desgid=11)
+                    enroll_instance = EnrollMast.objects.get(enrollid=card_no)
+
+                    try:
+                        emp_record = EmpMast.objects.get(empcode=card_no)
+                        emp_record.Name = name
+                        emp_record.enrollid = enroll_instance
+                        emp_record.department = department_instance
+                        emp_record.company = company_instance
+                        emp_record.designation = designation_instance
+                        emp_record.save()
+                    except EmpMast.DoesNotExist:
+                        last_emp_id = EmpMast.objects.aggregate(max_id=Max('ids'))['max_id'] or 0
+                        EmpMast.objects.create(
+                            ids=last_emp_id + 1,
+                            empcode=card_no,
+                            enrollid=enroll_instance,
+                            Name=name,
+                            department=department_instance,
+                            company=company_instance,
+                            designation=designation_instance
+                        )
+                    # --- STEP 4: Create MonitorData Punch Entry ---
+                    previous_srnos = MachineMast.objects.filter(machineno='3').values_list('SRNO', flat=True).first()
+                    adjusted_punchtime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    last_monitor_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
+                    MonitorData.objects.create(
+                        id=last_monitor_id + 1,
+                        EnrollID=card_no,
+                        PunchDate=adjusted_punchtime,
+                        SRNO=previous_srnos,
+                        TRID='3',
+                        Errorstatus=2
+                    )
+                except Exception as e:
+                    messages.error(request, f"Error creating employee record: {str(e)}")
+
+            messages.success(request, 'Visitor(s) added successfully!')
+            return redirect('home')
+
+        elif entry_type == "out":
+            today = timezone.now().date()
+            card_no = request.POST.get("cardNo")
+            gatepass = GatePass.objects.filter(cardNo=card_no, outTime__isnull=True,valid_to__gte=today).first()
+            if gatepass:
+                gatepass.outTime = timezone.now().strftime("%H:%M:%S")
+                gatepass.save()
+                previous_srnos = MachineMast.objects.filter(machineno='4').values_list('SRNO', flat=True).first()
+                adjusted_punchtime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                last_monitor_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
+                MonitorData.objects.create(
+                    id=last_monitor_id + 1,
+                    EnrollID=card_no,
+                    PunchDate=adjusted_punchtime,
+                    SRNO=previous_srnos,
+                    TRID='4',
+                    Errorstatus=2
+                )
+
+                messages.success(request, 'Visitor marked as OUT successfully!')
+            else:
+                messages.error(request, 'No active visitor entry found for this card.')
+            return redirect('home')
+    
 def auto_report(request):
     today = timezone.localdate()
     # today = date(2025, 3, 31)

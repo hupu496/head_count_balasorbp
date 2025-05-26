@@ -13,6 +13,7 @@ class GatePass(models.Model):
     mobile                       = models.CharField(max_length=250,blank=True, null=True)
     vehicleNo                    = models.CharField(max_length=250,blank=True, null=True)
     purpose                      = models.TextField()
+    visitor_name                      = models.TextField()
     noOfPerson                   = models.CharField(max_length=250,blank=True,null=True)
     idNo                         = models.CharField(max_length=250,blank=True,null=True)
     typeOf                       = models.CharField(max_length=250,blank=True,null=True)

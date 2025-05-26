@@ -35,11 +35,11 @@
           <!--  -->
          
         <li class=" p-1 nav-item dropdown dropdown-hover ms-lg-auto my-auto ms-3 ms-lg-0">
-          <a class="nav-link ps-2 d-flex cursor-pointer align-items-center font-weight-bold" style="font-size: 22px;" id="dropdownMenuPages" data-bs-toggle="dropdown" aria-expanded="false">
+          <!-- <a class="nav-link ps-2 d-flex cursor-pointer align-items-center font-weight-bold" style="font-size: 22px;" id="dropdownMenuPages" data-bs-toggle="dropdown" aria-expanded="false">
            
             Visitor List
            
-          </a>
+          </a> -->
           <div class="dropdown-menu dropdown-menu-animation ms-n3 dropdown-md p-3 border-radius-lg mt-0 mt-lg-3" aria-labelledby="dropdownMenuPages">
             <div class="d-none d-lg-block">
               <a href="{% url 'visitor_out' %}" style="font-size: 20px;" class="nav-link ps-2 d-flex cursor-pointer align-items-center dropdown-item">
@@ -96,11 +96,11 @@
           </a>
           <div class="dropdown-menu dropdown-menu-animation ms-n3 dropdown-md p-3 border-radius-lg mt-0 mt-lg-3" aria-labelledby="dropdownMenuPages">
             <div class="d-none d-lg-block">
-               <a class="nav-link ps-2 d-flex cursor-pointer align-items-center" style="font-size: 20px;" href="{% url 'visitor_report' %}">
+               <!-- <a class="nav-link ps-2 d-flex cursor-pointer align-items-center" style="font-size: 20px;" href="{% url 'visitor_report' %}">
            
            Visitor Report
            
-          </a>
+          </a> -->
             <a class="nav-link ps-2 d-flex cursor-pointer align-items-center" style="font-size: 20px;" href="{% url 'report' %}" >
                     <!-- <i class="fa fa-download me-1" aria-hidden="true"></i> -->
                   HeadCount Report
@@ -127,17 +127,8 @@
       </ul>
     </div>
     </div>
-    <!-- <img src="{% static 'img/id-card.png' %}" class="position-fixed" width="90px" style="right: 150px; z-index: 1050;" alt="">
-            <a class="nav-link ps-2 d-flex cursor-pointer align-items-center font-weight-bold btn btn-warning position-fixed"
-   href="{% url 'dashboard_visitor' %}"
-   style="right: 20px; z-index: 1050;">
-   Visitor Pass
-</a> -->
-<a class="nav-link d-flex cursor-pointer flex-column align-items-center font-weight-bold text-end position-fixed"
-         href="{% url 'dashboard_visitor' %}"  style="right: 20px; z-index: 1050;">
-        <img src="{% static 'img/id-card.png' %}" width="50px" alt="Head Count">
-        <div class="mt-1" style="font-size: 18px;">Visitor Pass</div>
-      </a>
+    
+
 </nav>
 <!-- End Navbar -->
 </div></div></div>
