@@ -98,7 +98,7 @@ def home(request):
             )
                 print(f"New MonitorData created: {data_dict['EnrollID']}")
 
-    livedata = MonitorData.objects.filter(PunchDate__date=request.session['selected_date']).order_by('-id')[:13]
+    livedata = MonitorData.objects.filter(PunchDate__date=request.session['selected_date'],Errorstatus=0).order_by('-id')[:13]
     srnos = livedata.values_list('SRNO', flat=True)
     enrollids = livedata.values_list('EnrollID', flat=True)
 
@@ -160,16 +160,20 @@ def home(request):
             )
         elif non_out > non_in:
             previous_srnos = MachineMast.objects.filter(machineno='9').values_list('SRNO', flat=True).first()
-            adjusted_punchtime = live.PunchDate - timedelta(seconds=30)
-            last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
-            MonitorData.objects.create(
-                id=last_id + 1,
-                EnrollID=live.EnrollID,
-                PunchDate=adjusted_punchtime,
-                SRNO=previous_srnos,
-                TRID='9',
-                Errorstatus=2
-            )
+            if previous_srnos:  # Proceed only if SRNO is found
+                adjusted_punchtime = live.PunchDate - timedelta(seconds=30)
+                last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
+                MonitorData.objects.create(
+                    id=last_id + 1,
+                    EnrollID=live.EnrollID,
+                    PunchDate=adjusted_punchtime,
+                    SRNO=previous_srnos,
+                    TRID='9',
+                    Errorstatus=2
+                )
+            else:
+                # Handle the case where SRNO is not found
+                print("No SRNO found for machineno=9 in MachineMast.")
 
         if (haz_in - haz_out) > 1:
             previous_srnos = MachineMast.objects.filter(machineno='8').values_list('SRNO', flat=True).first()
@@ -284,7 +288,7 @@ def live_data(request):
             selected_date = request.session.get('selected_date', today.strftime("%Y-%m-%d"))
             selected_date = timezone.datetime.strptime(selected_date, "%Y-%m-%d").date()
             try:
-                livedata = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')[:13]
+                livedata = MonitorData.objects.filter(PunchDate__date=selected_date,Errorstatus=0).order_by('-id')[:13]
                 data = []
                 for live in livedata:
                     try:
@@ -1413,6 +1417,7 @@ def gatepass_view(request):
     if request.method == "POST":
         entry_type = request.POST.get("entry_type")
         if entry_type == "in":
+            today = timezone.now().date()
             passNo = request.POST.get("passNo")
             no_of_person = int(request.POST.get("noOfPerson"))
             date_today = date.today()
@@ -1473,7 +1478,7 @@ def gatepass_view(request):
                         PunchDate=adjusted_punchtime,
                         SRNO=previous_srnos,
                         TRID='1',
-                        Errorstatus=2
+                        Errorstatus=0
                     )
                 except Exception as e:
                     messages.error(request, f"Error creating employee record: {str(e)}")
@@ -1486,7 +1491,7 @@ def gatepass_view(request):
             card_no = request.POST.get("cardNo")
             gatepass = GatePass.objects.filter(cardNo=card_no, outTime__isnull=True,valid_to__gte=today).first()
             if gatepass:
-                gatepass.outTime = timezone.now().strftime("%H:%M:%S")
+                gatepass.outTime = datetime.now().strftime("%H:%M:%S")
                 gatepass.save()
                 previous_srnos = MachineMast.objects.filter(machineno='2').values_list('SRNO', flat=True).first()
                 adjusted_punchtime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1497,7 +1502,7 @@ def gatepass_view(request):
                     PunchDate=adjusted_punchtime,
                     SRNO=previous_srnos,
                     TRID='2',
-                    Errorstatus=2
+                    Errorstatus=0
                 )
 
                 messages.success(request, 'Visitor marked as OUT successfully!')
@@ -1569,7 +1574,7 @@ def gatepass_viewout(request):
                         PunchDate=adjusted_punchtime,
                         SRNO=previous_srnos,
                         TRID='3',
-                        Errorstatus=2
+                        Errorstatus=0
                     )
                 except Exception as e:
                     messages.error(request, f"Error creating employee record: {str(e)}")
@@ -1582,7 +1587,7 @@ def gatepass_viewout(request):
             card_no = request.POST.get("cardNo")
             gatepass = GatePass.objects.filter(cardNo=card_no, outTime__isnull=True,valid_to__gte=today).first()
             if gatepass:
-                gatepass.outTime = timezone.now().strftime("%H:%M:%S")
+                gatepass.outTime = datetime.now().strftime("%H:%M:%S")
                 gatepass.save()
                 previous_srnos = MachineMast.objects.filter(machineno='4').values_list('SRNO', flat=True).first()
                 adjusted_punchtime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1593,7 +1598,7 @@ def gatepass_viewout(request):
                     PunchDate=adjusted_punchtime,
                     SRNO=previous_srnos,
                     TRID='4',
-                    Errorstatus=2
+                    Errorstatus=0
                 )
 
                 messages.success(request, 'Visitor marked as OUT successfully!')

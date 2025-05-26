@@ -60,7 +60,10 @@ display: block;
             padding: 20px;
             text-align: center;
         }
-
+.visitor-input::placeholder {
+  color: black;
+  font-weight: bold;
+}
 {% endblock css %}
 {% block title %} IOCL | Head Count System {% endblock title %}
 {% block body %} class="index-page bg-gray-200" {% endblock body %}
@@ -357,7 +360,7 @@ display: block;
       <div class="modal-body">
        
      <div class="form-group">
-    <label>Entry Type:</label><br>
+    <label style="font-weight: 500; color:black;">Entry Type:</label><br>
     <input type="radio" name="entry_type" value="in" id="inRadio" checked> IN
     <input type="radio" name="entry_type" value="out" id="outRadio"> OUT
   </div>
@@ -368,7 +371,7 @@ display: block;
       <div class="col-md-6">
       <div class="form-group">
       <div class="input-group input-group-outline is-valid my-3">
-        <label class="form-label">No Of Vistors <span style="color:red;">*</span></label>
+        <label class="form-label" style="color:black;">No Of Vistors <span style="color:red;">*</span></label>
       <input type="number" id="noOfVisitors" name="noOfPerson" class="form-control" value="1" min="1">
       </div>
     </div>
@@ -378,7 +381,7 @@ display: block;
     <div class="col-md-6">
       <div class="form-group">
       <div class="input-group input-group-outline is-valid my-3">
-      <label class="form-label">Pass No(optional)</label>
+      <label class="form-label" style="color:black;">Pass No(optional)</label>
       <input type="text" name="passNo" class="form-control" >
     </div>
     </div>
@@ -398,10 +401,10 @@ display: block;
     <div class="row">
       <div class="col-md-6">
         <div class="form-group">
-          <label>Select Card (IN visitors not yet OUT)</label>
+          <label style="color:black; font-weight: 500;">Select Card (IN visitors not yet OUT)</label>
          <select id="outCardSelect" name="cardNo" class="form-control">
           {% for entry in open_cards %}
-          <option value="{{ entry.cardNo }}">{{ entry.cardNo }} - {{ entry.name }}</option>
+          <option value="{{ entry.cardNo }}" style="color:black;">{{ entry.cardNo }} - {{ entry.name }}</option>
           {% endfor %}
         </select>
 
@@ -409,8 +412,8 @@ display: block;
       </div>
       <div class="col-md-6">
          <div class="form-group">
-          <label>Visitor Name</label>
-          <input type="text" id="outName" class="form-control" readonly>
+          <label style="color:black;">Visitor Name</label>
+          <input type="text" style="color:black;" id="outName" class="form-control" readonly>
       </div>
     </div>
     </div>
@@ -439,7 +442,7 @@ display: block;
       <div class="modal-body">
        
      <div class="form-group">
-    <label>Entry Type:</label><br>
+    <label style="color:black; font-weight: 500;">Entry Type:</label><br>
     <input type="radio" name="entry_type" value="in" id="inRadiog" checked> IN
     <input type="radio" name="entry_type" value="out" id="outRadiog"> OUT
   </div>
@@ -450,7 +453,7 @@ display: block;
       <div class="col-md-6">
       <div class="form-group">
       <div class="input-group input-group-outline is-valid my-3">
-        <label class="form-label">No Of Vistors <span style="color:red;">*</span></label>
+        <label class="form-label" style="color:black;">No Of Vistors <span style="color:red;">*</span></label>
       <input type="number" id="noOfVisitorsg" name="noOfPerson" class="form-control" value="1" min="1">
       </div>
     </div>
@@ -460,16 +463,16 @@ display: block;
     <div class="col-md-6">
       <div class="form-group">
       <div class="input-group input-group-outline is-valid my-3">
-      <label class="form-label">Pass No(optional)</label>
-      <input type="text" name="passNo" class="form-control" >
+      <label class="form-label"style="color:black;">Pass No(optional)</label>
+      <input type="text" name="passNo" style="color:black;" class="form-control" >
     </div>
     </div>
     </div>
     <div class="col-md-6">
       <div class="form-group">
          <div class="input-group input-group-outline is-valid my-3">
-      <label  class="form-label">Date</label>
-      <input type="date" name="date" id="dateFieldg" class="form-control" readonly>
+      <label  class="form-label" style="color:black;">Date</label>
+      <input type="date" name="date" style="color:black;" id="dateFieldg" class="form-control" readonly>
       </div>
     </div>
     </div>
@@ -480,10 +483,10 @@ display: block;
     <div class="row">
       <div class="col-md-6">
         <div class="form-group">
-          <label>Select Card (IN visitors not yet OUT)</label>
+          <label style="color:black; font-weight: 500;">Select Card (IN visitors not yet OUT)</label>
          <select id="outCardSelectg" name="cardNo" class="form-control">
           {% for entry in open_cards %}
-          <option value="{{ entry.cardNo }}">{{ entry.cardNo }} - {{ entry.name }}</option>
+          <option value="{{ entry.cardNo }}" style="color:black;">{{ entry.cardNo }} - {{ entry.name }}</option>
           {% endfor %}
         </select>
 
@@ -492,7 +495,7 @@ display: block;
       <div class="col-md-6">
          <div class="form-group">
           <label>Visitor Name</label>
-          <input type="text" id="outNameg" class="form-control" readonly>
+          <input type="text" id="outNameg" class="form-control" style="color:black;" readonly>
       </div>
     </div>
     </div>
@@ -545,16 +548,16 @@ document.addEventListener('DOMContentLoaded', function() {
   const outName = document.getElementById('outName');
 
   function generateVisitorFields(count) {
-    visitorNames.innerHTML = '';
-    for (let i = 0; i < count; i++) {
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.name = `name_${i + 1}`;
-      input.className = 'form-control mb-2';
-      input.placeholder = `Visitor ${i + 1} Name`;
-      visitorNames.appendChild(input);
-    }
+  visitorNames.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.name = `name_${i + 1}`;
+    input.className = 'form-control mb-2 visitor-input'; // Added a class
+    input.placeholder = `Visitor ${i + 1} Name`;
+    visitorNames.appendChild(input);
   }
+}
 
   noOfVisitors.addEventListener('input', () => {
     generateVisitorFields(parseInt(noOfVisitors.value));
@@ -601,7 +604,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const input = document.createElement('input');
       input.type = 'text';
       input.name = `name_${i + 1}`;
-      input.className = 'form-control mb-2';
+      input.className = 'form-control mb-2 visitor-input';
       input.placeholder = `Visitor ${i + 1} Name`;
       visitorNames.appendChild(input);
     }
