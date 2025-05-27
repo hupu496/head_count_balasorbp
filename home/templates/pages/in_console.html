@@ -1,14 +1,28 @@
 {% extends 'layouts/visitor_base.html' %}
 {% load static %}
 {% block css %}
-
-.bg-gradient-dark {
+.bg-gradient-primary {
+    background-image: linear-gradient(195deg, #021750 0%, #021750 100%);
+}
+.btn-primary {
     --bs-btn-color: #000;
     --bs-btn-bg: #f37022;
     --bs-btn-border-color: #f37022;
   }
+  .bg-warning{
+   color:white;
+  }
+
+  .btn-padding {
+    margin-top:30px
+  }
   
  {% endblock css %}
+{% block header %}
+
+    {% include 'includes/navigation.html' %}
+
+  {% endblock header %}
 
 {% block title %} IOCL | Head Count System {% endblock title %}
 
@@ -17,7 +31,12 @@
 {% block content %}
 
 </div></div></div>
-
+<header class="header-2">
+  <div class="page-header min-vh-25 relative" style="background-image: url('{% static 'img/bg2.jpg' %}')">
+    <span class="mask bg-gradient-primary opacity-4"></span>
+    
+  </div>
+</header>
 <div class="card card-body blur shadow-blur mx-3 mx-md-4 mt-n4">
   <section class="pt-3 pb-4" id="count-stats">
   <div class="container">

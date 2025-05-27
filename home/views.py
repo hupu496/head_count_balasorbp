@@ -1159,43 +1159,45 @@ def con_mismatch(request):
     inputs = InForm(request.POST or None)
     selected_date = today
     selected_input = None
+
     if form.is_valid():
         selected_date = form.cleaned_data['selected_date']
 
     if inputs.is_valid():
         selected_input = inputs.cleaned_data['selected_input']
 
-    # Fetch MonitorData for the selected date and ErrorStatus=1
+    # Filter MonitorData for selected date, ErrorStatus = 2, and TRID in [1, 3]
     monitor_data = MonitorData.objects.filter(
-    PunchDate__date=selected_date,  # Filter by the date part of PunchDate
-    Errorstatus=2  # Filter for Errorstatus = 1
+        PunchDate__date=selected_date,
+        Errorstatus=2,
+        TRID__in=[2,4]
     )
-    gate_wise_data = []
-    
-    for data in monitor_data:
-        # Find the corresponding gate machine entry
-        mach = MachineMast.objects.filter(SRNO=data.SRNO).first()
 
-        in_time = data.PunchDate.strftime("%H:%M:%S") if mach.Response == 'EXIT' else None
-        out_time = None
+    gate_wise_data = []
+
+    for data in monitor_data:
+        mach = MachineMast.objects.filter(machineno=data.TRID).first()
+        if not mach:
+            continue
+
+        out_time = data.PunchDate.strftime("%H:%M:%S") if mach.Response == 'OUT' else None
+
         enroll = EnrollMast.objects.filter(enrollid=data.EnrollID).first()
         if enroll:
             try:
                 employee = EmpMast.objects.get(enrollid=enroll)
-                department = employee.department  # Assuming department field exists in EmpMast
-                # Collect gate-wise IN and OUT times
+                department = employee.department  # Assuming this exists
+
                 gate_wise_data.append({
-                    'gate_name': mach.Name,  # Gate name
-                    'in_time': in_time,
+                    'gate_name': mach.Name,
                     'out_time': out_time,
                     'enrollid': data.EnrollID,
                     'name': employee.Name,
-                    'department': department,  # Department name
-                  
+                    'department': department,
                 })
             except EmpMast.DoesNotExist:
-                # Handle the case where the employee does not exist
                 print(f"Employee with EnrollID {enroll.enrollid} does not exist.")
+
     context = {
         'form': form,
         'inputs': inputs,
@@ -1261,54 +1263,37 @@ def in_console(request):
     if inputs.is_valid():
         selected_input = inputs.cleaned_data['selected_input']
 
-    # Fetch MonitorData for the selected date and ErrorStatus=1
-    monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date, Errorstatus=1)
+    # Filter MonitorData for selected date, ErrorStatus = 2, and TRID in [1, 3]
+    monitor_data = MonitorData.objects.filter(
+        PunchDate__date=selected_date,
+        Errorstatus=2,
+        TRID__in=[1, 3]
+    )
 
-    # Store data grouped by gate
     gate_wise_data = []
-    
+
     for data in monitor_data:
-        # Find the corresponding gate machine entry
         mach = MachineMast.objects.filter(SRNO=data.SRNO).first()
         if not mach:
             continue
-        
-        # Find previous 'OUT' entry (if any) for the same employee and gate
-        previous_entries = MonitorData.objects.filter(
-            EnrollID=data.EnrollID, PunchDate__lt=data.PunchDate
-        ).order_by('-PunchDate')
 
         in_time = data.PunchDate.strftime("%H:%M:%S") if mach.Response == 'IN' else None
-        out_time = None
-        previous_mach_name = None
-
-        if previous_entries.exists():
-            previous_entry = previous_entries.first()
-            previous_mach = MachineMast.objects.filter(SRNO=previous_entry.SRNO).first()
-
-            if previous_mach and previous_mach.Response == 'EXIT':
-                out_time = previous_entry.PunchDate.strftime("%H:%M:%S")
-                previous_mach_name = previous_mach.Name
 
         enroll = EnrollMast.objects.filter(enrollid=data.EnrollID).first()
         if enroll:
             try:
                 employee = EmpMast.objects.get(enrollid=enroll)
-                department = employee.department  # Assuming department field exists in EmpMast
-                # Collect gate-wise IN and OUT times
+                department = employee.department  # Assuming this exists
+
                 gate_wise_data.append({
-                    'gate_name': mach.Name,  # Gate name
+                    'gate_name': mach.Name,
                     'in_time': in_time,
-                    'out_time': out_time,
                     'enrollid': data.EnrollID,
                     'name': employee.Name,
-                    'department': department,  # Department name
-                    'previous_gate_name': previous_mach_name,
+                    'department': department,
                 })
             except EmpMast.DoesNotExist:
-                # Handle the case where the employee does not exist
                 print(f"Employee with EnrollID {enroll.enrollid} does not exist.")
-
 
     context = {
         'form': form,
