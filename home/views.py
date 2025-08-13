@@ -25,6 +25,7 @@ from datetime import timedelta
 from django.db.models import Count
 from collections import defaultdict
 from django.db.models import Q, Count, F
+from django.core.files.base import ContentFile
 import logging
 import os
 from django.utils.timezone import now
@@ -52,74 +53,9 @@ def home(request):
         request.session['selected_date'] = selected_date.strftime("%Y-%m-%d")
         is_today = (selected_date == today)
     else:
+        selected_date = today
         request.session['selected_date'] = today.strftime("%Y-%m-%d")
-    with pyodbc.connect(
-        'Driver={SQL Server};'
-        'Server=DESKTOP-5N7IKQ6;'
-        'Database=DATAIOCL;'
-        'Trusted_Connection=yes;'
-    ) as conn:
-        cursor = conn.cursor()
-        query = "SELECT * FROM MonitorDataTbl WHERE CAST(PunchDate AS DATE) = ?"
-        punch_datetime = selected_date.strftime('%Y-%m-%d')
 
-        cursor.execute(query, punch_datetime)
-        rows = cursor.fetchall()
-        
-        for row in rows:
-            data_dict = {
-                'SRNO': row[0],
-                'EnrollID': row[1],
-                'PunchDate': row[2].strftime("%Y-%m-%d %H:%M:%S"),
-                'TRID': row[3],
-                'id': row[4],
-                'SEND_SERVER': row[5],
-                'RESEND_SERVER': row[6],
-            }
-            # Check if a record with the same EnrollID, PunchDate, and SRNO already exists
-            exists = MonitorData.objects.filter(
-                EnrollID=data_dict['EnrollID'],
-                PunchDate=data_dict['PunchDate'],
-                SRNO=data_dict['SRNO']
-            ).exists()
-
-            if not exists:
-                last_id = MonitorData.objects.aggregate(max_id=models.Max('id'))['max_id']
-                new_id = (last_id or 0) + 1
-                MonitorData.objects.get_or_create(
-                    id=new_id,
-                    defaults={
-                        'SRNO': data_dict['SRNO'],
-                        'EnrollID': data_dict['EnrollID'],
-                        'PunchDate': data_dict['PunchDate'],
-                        'TRID':data_dict['TRID'],
-                        'Errorstatus':'0'
-                    }
-            )
-                print(f"New MonitorData created: {data_dict['EnrollID']}")
-
-    livedata = MonitorData.objects.filter(PunchDate__date=request.session['selected_date'],Errorstatus=0).order_by('-id')[:13]
-    srnos = livedata.values_list('SRNO', flat=True)
-    enrollids = livedata.values_list('EnrollID', flat=True)
-
-    machnes = MachineMast.objects.filter(SRNO__in=srnos)
-    enrolls = EnrollMast.objects.filter(enrollid__in=enrollids)
-    employees = EmpMast.objects.filter(enrollid__in=enrolls)
-
-    machine_dict = {machine.SRNO: machine for machine in machnes}
-    enroll_dict = {enroll.enrollid: enroll for enroll in enrolls}
-    employee_dict = {employee.enrollid_id: employee for employee in employees}
-
-    data = []
-    for live in livedata:
-        machine = machine_dict.get(live.SRNO)
-        enroll = enroll_dict.get(live.EnrollID)
-        employeedata = employee_dict.get(enroll.id) if enroll else None
-        data.append({
-            'monitor': live,
-            'machine': machine,
-            'employee': employeedata
-        })
     # Prepare data by gates
     all_departments = DepartMast.objects.values_list("DepartName", flat=True)
     monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
@@ -132,75 +68,6 @@ def home(request):
     non_hazard_total = hazard_total = 0
     for live in monitor_data:
         # Calculate counts for non-hazard and hazard data
-        non_in = MonitorData.objects.filter(
-            EnrollID=live.EnrollID, TRID__in=['1', '5', '9'], PunchDate__date=selected_date
-        ).count()
-        non_out = MonitorData.objects.filter(
-            EnrollID=live.EnrollID, TRID__in=['2', '6', '10'], PunchDate__date=selected_date
-        ).count()
-        haz_in = MonitorData.objects.filter(
-            EnrollID=live.EnrollID, TRID__in=['3', '7'], PunchDate__date=selected_date
-        ).count()
-        haz_out = MonitorData.objects.filter(
-            EnrollID=live.EnrollID, TRID__in=['4', '8'], PunchDate__date=selected_date
-        ).count()
-
-        # Logic for adjustments
-        if (non_in - non_out) > 1:
-            previous_srnos = MachineMast.objects.filter(machineno='10').values_list('SRNO', flat=True).first()
-            adjusted_punchtime = live.PunchDate + timedelta(seconds=30)
-            last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
-            MonitorData.objects.create(
-                id=last_id + 1,
-                EnrollID=live.EnrollID,
-                PunchDate=adjusted_punchtime,
-                SRNO=previous_srnos,
-                TRID='10',
-                Errorstatus=2
-            )
-        elif non_out > non_in:
-            previous_srnos = MachineMast.objects.filter(machineno='9').values_list('SRNO', flat=True).first()
-            if previous_srnos:  # Proceed only if SRNO is found
-                adjusted_punchtime = live.PunchDate - timedelta(seconds=30)
-                last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
-                MonitorData.objects.create(
-                    id=last_id + 1,
-                    EnrollID=live.EnrollID,
-                    PunchDate=adjusted_punchtime,
-                    SRNO=previous_srnos,
-                    TRID='9',
-                    Errorstatus=2
-                )
-            else:
-                # Handle the case where SRNO is not found
-                print("No SRNO found for machineno=9 in MachineMast.")
-
-        if (haz_in - haz_out) > 1:
-            previous_srnos = MachineMast.objects.filter(machineno='8').values_list('SRNO', flat=True).first()
-            adjusted_punchtime = live.PunchDate + timedelta(seconds=30)
-            last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
-            MonitorData.objects.create(
-                id=last_id + 1,
-                EnrollID=live.EnrollID,
-                PunchDate=adjusted_punchtime,
-                SRNO=previous_srnos,
-                TRID='8',
-                Errorstatus=2
-            )
-        elif haz_out > haz_in:
-            previous_srnos = MachineMast.objects.filter(machineno='7').values_list('SRNO', flat=True).first()
-            adjusted_punchtime = live.PunchDate - timedelta(seconds=30)
-            last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
-            MonitorData.objects.create(
-                id=last_id + 1,
-                EnrollID=live.EnrollID,
-                PunchDate=adjusted_punchtime,
-                SRNO=previous_srnos,
-                TRID='7',
-                Errorstatus=2
-            )
-
-        # Count totals
         if live.TRID in ['1', '5', '9']:
             non_hazard_in += 1
         elif live.TRID in ['2', '6', '10']:
@@ -282,7 +149,6 @@ def home(request):
     context = {
         "non_hazardous": non_hazardous_data,
         "hazardous": hazardous_data,
-        'data': data,
         'form':form,
         'is_today': is_today,
         'form_valid': form_valid,
@@ -339,6 +205,130 @@ def live_data(request):
                 logger.error(f"Error fetching or processing live data: {e}")
                 return JsonResponse({"error": "Error processing live data"}, status=500)
             try:
+                with pyodbc.connect(
+                    'Driver={SQL Server};'
+                    'Server=DESKTOP-5N7IKQ6;'
+                    'Database=DATAIOCL;'
+                    'Trusted_Connection=yes;'
+                ) as conn:
+                    cursor = conn.cursor()
+                    query = "SELECT * FROM MonitorDataTbl WHERE CAST(PunchDate AS DATE) = ?"
+                    punch_datetime = selected_date.strftime('%Y-%m-%d')
+
+                    cursor.execute(query, punch_datetime)
+                    rows = cursor.fetchall()
+                    
+                    for row in rows:
+                        data_dict = {
+                            'SRNO': row[0],
+                            'EnrollID': row[1],
+                            'PunchDate': row[2].strftime("%Y-%m-%d %H:%M:%S"),
+                            'TRID': row[3],
+                            'id': row[4],
+                            'SEND_SERVER': row[5],
+                            'RESEND_SERVER': row[6],
+                        }
+                        # Check if a record with the same EnrollID, PunchDate, and SRNO already exists
+                        exists = MonitorData.objects.filter(
+                            EnrollID=data_dict['EnrollID'],
+                            PunchDate=data_dict['PunchDate'],
+                            SRNO=data_dict['SRNO']
+                        ).exists()
+
+                        if not exists:
+                            last_id = MonitorData.objects.aggregate(max_id=models.Max('id'))['max_id']
+                            new_id = (last_id or 0) + 1
+                            MonitorData.objects.get_or_create(
+                                id=new_id,
+                                defaults={
+                                    'SRNO': data_dict['SRNO'],
+                                    'EnrollID': data_dict['EnrollID'],
+                                    'PunchDate': data_dict['PunchDate'],
+                                    'TRID':data_dict['TRID'],
+                                    'Errorstatus':'0'
+                                }
+                        )
+                            print(f"New MonitorData created: {data_dict['EnrollID']}")
+
+                # Prepare data by gates
+                all_departments = DepartMast.objects.values_list("DepartName", flat=True)
+                monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
+                # Fetch related data
+               
+                       
+                # Initialize all counts
+                hazard_in_count = hazard_out_count = 0
+                non_hazard_in = non_hazard_out = 0
+                non_hazard_total = hazard_total = 0
+                for live in monitor_data:
+                    # Calculate counts for non-hazard and hazard data
+                    non_in = MonitorData.objects.filter(
+                        EnrollID=live.EnrollID, TRID__in=['1', '5', '9'], PunchDate__date=selected_date
+                    ).count()
+                    non_out = MonitorData.objects.filter(
+                        EnrollID=live.EnrollID, TRID__in=['2', '6', '10'], PunchDate__date=selected_date
+                    ).count()
+                    haz_in = MonitorData.objects.filter(
+                        EnrollID=live.EnrollID, TRID__in=['3', '7'], PunchDate__date=selected_date
+                    ).count()
+                    haz_out = MonitorData.objects.filter(
+                        EnrollID=live.EnrollID, TRID__in=['4', '8'], PunchDate__date=selected_date
+                    ).count()
+
+                    # Logic for adjustments
+                    if (non_in - non_out) > 1:
+                        previous_srnos = MachineMast.objects.filter(machineno='10').values_list('SRNO', flat=True).first()
+                        adjusted_punchtime = live.PunchDate + timedelta(seconds=30)
+                        last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
+                        MonitorData.objects.create(
+                            id=last_id + 1,
+                            EnrollID=live.EnrollID,
+                            PunchDate=adjusted_punchtime,
+                            SRNO=previous_srnos,
+                            TRID='10',
+                            Errorstatus=2
+                        )
+                    elif non_out > non_in:
+                        previous_srnos = MachineMast.objects.filter(machineno='9').values_list('SRNO', flat=True).first()
+                        if previous_srnos:  # Proceed only if SRNO is found
+                            adjusted_punchtime = live.PunchDate - timedelta(seconds=30)
+                            last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
+                            MonitorData.objects.create(
+                                id=last_id + 1,
+                                EnrollID=live.EnrollID,
+                                PunchDate=adjusted_punchtime,
+                                SRNO=previous_srnos,
+                                TRID='9',
+                                Errorstatus=2
+                            )
+                        else:
+                            # Handle the case where SRNO is not found
+                            print("No SRNO found for machineno=9 in MachineMast.")
+
+                    if (haz_in - haz_out) > 1:
+                        previous_srnos = MachineMast.objects.filter(machineno='8').values_list('SRNO', flat=True).first()
+                        adjusted_punchtime = live.PunchDate + timedelta(seconds=30)
+                        last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
+                        MonitorData.objects.create(
+                            id=last_id + 1,
+                            EnrollID=live.EnrollID,
+                            PunchDate=adjusted_punchtime,
+                            SRNO=previous_srnos,
+                            TRID='8',
+                            Errorstatus=2
+                        )
+                    elif haz_out > haz_in:
+                        previous_srnos = MachineMast.objects.filter(machineno='7').values_list('SRNO', flat=True).first()
+                        adjusted_punchtime = live.PunchDate - timedelta(seconds=30)
+                        last_id = MonitorData.objects.aggregate(max_id=Max('id'))['max_id'] or 0
+                        MonitorData.objects.create(
+                            id=last_id + 1,
+                            EnrollID=live.EnrollID,
+                            PunchDate=adjusted_punchtime,
+                            SRNO=previous_srnos,
+                            TRID='7',
+                            Errorstatus=2
+                        )
                 # Count hazards and non-hazards
                 all_departments = DepartMast.objects.values_list("DepartName", flat=True)
                 hazard_in_count = MonitorData.objects.filter(

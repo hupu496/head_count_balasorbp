@@ -106,25 +106,17 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 DATABASES = {
-    'default': {
-         'ENGINE': 'django.db.backends.sqlite3',
+    'default': {  # System 2's local DB
+        'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-        
     },
-    'users':{
-            'ENGINE' :'sql_server.pyodbc',
-            'NAME' : 'DATAIOCL',
-            'USER':'sa',
-            'PASSWORD':'123456',
-            'HOST':'127.0.0.1',
-            'OPTIONS':{
-             
-             'driver':'ODBC Driver 17 for SQL Server',
-             'isolation_level':'READ UNCOMMITTED'
-            }
+    'mirror': {   # System 1's DB over shared folder
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': r'\\192.168.0.101\django\head_count_balasorbp\db.sqlite3',  # UNC path to System 1's DB file
+    }
 
     }
-}
+
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 

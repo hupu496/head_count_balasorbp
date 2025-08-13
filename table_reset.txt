@@ -13,3 +13,21 @@ with connection.cursor() as cursor:
     cursor.execute("DELETE FROM sqlite_sequence WHERE name='home_monitordata';")
     cursor.execute("DELETE FROM sqlite_sequence WHERE name='home_departmast';")
     cursor.execute("DELETE FROM sqlite_sequence WHERE name='home_desmast';")
+
+
+       ┌─────────────────────────┐        LAN Network        ┌─────────────────────────┐
+   │       SYSTEM 1           │  ◀────────────────────▶  │        SYSTEM 2          │
+   │ IP: 192.168.0.101         │                         │ IP: 192.168.0.102         │
+   │                           │                         │                           │
+   │ Local DB (default):       │                         │ Local DB (default):       │
+   │ C:\Users\Adarsh\django\   │                         │ C:\Users\Adarsh\django\   │
+   │ head_count_balasorbp\     │                         │ head_count_balasorbp\     │
+   │ db.sqlite3                │                         │ db.sqlite3                │
+   │                           │                         │                           │
+   │ Mirror DB (points to 2):  │                         │ Mirror DB (points to 1):  │
+   │ \\192.168.0.102\          │                         │ \\192.168.0.101\          │
+   │ shared_folder\db.sqlite3  │                         │ shared_folder\db.sqlite3  │
+   │                           │                         │                           │
+   │ post_save / post_delete   │                         │ post_save / post_delete   │
+   │ signals write to both DBs │                         │ signals write to both DBs │
+   └─────────────────────────┘                         └─────────────────────────┘
