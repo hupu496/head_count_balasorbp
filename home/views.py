@@ -36,6 +36,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from .utils import generate_report_for_date 
 import subprocess
+import requests
+
 logger = logging.getLogger(__name__)
 
 @login_required(login_url='/')
@@ -59,9 +61,6 @@ def home(request):
     # Prepare data by gates
     all_departments = DepartMast.objects.values_list("DepartName", flat=True)
     monitor_data = MonitorData.objects.filter(PunchDate__date=selected_date).order_by('-id')
-    # Fetch related data
-   
-           
     # Initialize all counts
     hazard_in_count = hazard_out_count = 0
     non_hazard_in = non_hazard_out = 0
@@ -724,6 +723,7 @@ def depart_master(request):
         departName = request.POST.get('departName')
         department = DepartMast(DepartName = departName, Status=True)
         department.save()
+        add_dept(departName)
         return redirect('depart_master')
     departmenties  = DepartMast.objects.all()
     department_list = [{'counter': i + 1, 'department': department} for i, department in enumerate(departmenties )]
@@ -738,7 +738,10 @@ def edit_depart(request, pk):
     if request.method == 'POST':
         form = DepartForm(request.POST, instance=department)
         if form.is_valid():
-            form.save()
+            updated_department = form.save()
+
+            # 🔄 Call API for syncing
+            edit_dept(pk, updated_department.DepartName)
             return redirect('depart_master')
     else:
         form = DepartForm(instance=department)
@@ -748,6 +751,7 @@ def edit_depart(request, pk):
 def delete_depart(request, pk):
     department = get_object_or_404(DepartMast, pk=pk)
     department.delete()
+    delete_dept(pk)
     return redirect('depart_master')
 
 @login_required(login_url='/')
@@ -759,6 +763,7 @@ def emp_master(request):
         compid = request.POST.get('compid')
         DepartId = request.POST.get('DepartId')
         Desgid = request.POST.get('Desgid')
+        add_emp(empcode,Name,compid,DepartId,Desgid,enrollid)
         try:
             enrollid = EnrollMast.objects.get(id=enrollid)
             company = CompanyMast.objects.get(CompanyId=compid)
@@ -769,6 +774,7 @@ def emp_master(request):
                 if not EmpMast.objects.filter(empcode=empcode).exists():
                     employee = EmpMast(company=company, department=department, designation=designation, empcode=empcode, Name=Name, enrollid=enrollid)
                     employee.save()
+                    
                     messages.success(request, 'Employee saved successfully! {}'.format(enrollid.enrollid))
                 else:
                     messages.error(request, 'Employee already exists {}'.format(enrollid.enrollid))
@@ -850,11 +856,12 @@ def edit_employee(request, pk):
     if request.method == 'POST':
         form = EmpForm(request.POST, instance=employe)
         if form.is_valid():
-           
+            edit_emp(employe.empcode, employe.Name, pk)
             employee = form.save(commit=False)
-
+            
             # Save updated employee
             employee.save()
+            
             return redirect('emp_master')
         else:
             print(form.errors)  # Debugging: Check form validation errors
@@ -884,6 +891,7 @@ def edit_employee(request, pk):
 def delete_employee(request, pk):
     employee = get_object_or_404(EmpMast, pk=pk)
     employee.delete()
+    delete_emp(pk)
     return redirect('emp_master')
 
 @csrf_exempt 
@@ -898,6 +906,7 @@ def enroll_mast(request):
             # Check if DepartId is '1' (or any specific condition)
             if str(DepartId) in ['1', '2']:
                 enrollid = request.POST.get('enrollid')  # Get enrollid instead of from/to
+                add_enroll(enrollid, DepartId)
                 if not EnrollMast.objects.filter(enrollid=enrollid).exists():
                     enrollmast = EnrollMast(enrollid=enrollid, department=department)
                     enrollmast.save()
@@ -940,14 +949,15 @@ def enroll_mast(request):
 @login_required(login_url='/')
 def delete_enroll(request, pk):
     employee = get_object_or_404(EnrollMast, pk=pk)
+    delete_enrolls(pk)
     employee.delete()
     return redirect('enroll_mast')
 @csrf_exempt 
-@login_required(login_url='/')
 def des_master(request):
     if request.method == 'POST':
         DepartId = request.POST.get('DepartId')
         Designation = request.POST.get('Designation')
+        add_des(Designation,DepartId)
         department = DepartMast.objects.get(DepartId=DepartId)
         designation = DesMast(department=department, Designation=Designation)
         designation.save()
@@ -962,12 +972,13 @@ def des_master(request):
     return render(request,'pages/des_master.html',context)
     
 @csrf_exempt 
-@login_required(login_url='/')
 def edit_designation(request, pk):
     designation = get_object_or_404(DesMast, pk=pk)
     if request.method == 'POST':
         form = DesForm(request.POST, instance=designation)
         if form.is_valid():
+            departid=request.POST.get('department')
+            edit_des(pk, designation, departid)
             designation = form.save(commit=False)
             department = DepartMast.objects.get(DepartId=request.POST.get('department'))
             designation.department = department
@@ -982,6 +993,7 @@ def edit_designation(request, pk):
 def delete_designation(request, pk):
     designation = get_object_or_404(DesMast, pk=pk)
     designation.delete()
+    delete_des(pk)
     return redirect('des_master')
 
 @csrf_exempt 
@@ -990,6 +1002,7 @@ def comp_master(request):
     if request.method == 'POST':
         Company = request.POST.get('Company')
         Address = request.POST.get('Address')
+        add_comp(Company, Address)
         company =CompanyMast(Company = Company,Address = Address)
         company.save()
         return redirect('comp_master')
@@ -1005,9 +1018,12 @@ def comp_master(request):
 def edit_company(request, pk):
     company = get_object_or_404(CompanyMast, pk=pk)
     if request.method == 'POST':
+        Company = request.POST.get('Company')
+        Address = request.POST.get('Address')
         form = CompanyForm(request.POST, instance=company)
         if form.is_valid():
             form.save()
+            edit_comp(pk, Company, Address)
             return redirect('comp_master')
     else:
         form = CompanyForm(instance=company)
@@ -1018,6 +1034,7 @@ def edit_company(request, pk):
 def delete_company(request, pk):
     company = get_object_or_404(CompanyMast, pk=pk)
     company.delete()
+    delete_comp(pk)
     return redirect('comp_master')
 
 @csrf_exempt 
@@ -1029,6 +1046,7 @@ def machine_master(request):
         devicemodel = request.POST.get('devicemodel')
         Name = request.POST.get('Name')
         Response = request.POST.get('Response')
+        add_mach(machineno, SRNO, devicemodel, Name, Response)
         machine =MachineMast(machineno=machineno, SRNO= SRNO, devicemodel=devicemodel, Name = Name, Response = Response)
         machine.save()
         return redirect('machine_master')
@@ -1044,8 +1062,14 @@ def edit_machine(request, pk):
     machine = get_object_or_404(MachineMast, pk=pk)
     if request.method == 'POST':
         form = MachineForm(request.POST, instance=machine)
+        machineno = request.POST.get('machineno')
+        SRNO = request.POST.get('SRNO')
+        devicemodel = request.POST.get('devicemodel')
+        Name = request.POST.get('Name')
+        Response = request.POST.get('Response')
         if form.is_valid():
             form.save()
+            edit_mach(machineno, SRNO, devicemodel, Name, Response, pk)
             return redirect('machine_master')
     else:
         form = MachineForm(instance=machine)
@@ -1055,9 +1079,10 @@ def edit_machine(request, pk):
 def delete_machine(request, pk):
     machine = get_object_or_404(MachineMast, pk=pk)
     machine.delete()
+    delete_mach(pk)
     return redirect('machine_master')
 
-@csrf_exempt 
+@csrf_exempt    
 @login_required(login_url='/')
 def category(request):
     today = timezone.now().date()
@@ -1313,11 +1338,7 @@ def login_visitor(request):
             return JsonResponse({'success': False, 'message': 'Invalid credentials'})
     return render(request, 'pages/visitor_login.html')
 
-# @login_required(login_url='/')
-# def dashboard_visitor(request):
-#     request.session['login'] = 'adminlogin'
-#     autovisitorout()
-#     return render(request, 'pages/visitor_dashboard.html')
+
 
     
 @method_decorator(csrf_exempt, name='dispatch')
@@ -1413,6 +1434,7 @@ def gatepass_view(request):
             passNo = request.POST.get("passNo")
             no_of_person = int(request.POST.get("noOfPerson"))
             date_today = date.today()
+            
             try:
                 visitor_department = DepartMast.objects.only('DepartId').get(DepartName__iexact="VISITOR")
             except DepartMast.DoesNotExist:
@@ -1420,8 +1442,12 @@ def gatepass_view(request):
                 return render(request, 'pages/new_entry_visitor.html', {})
             all_enrolls = EnrollMast.objects.filter(department=visitor_department.DepartId).only('enrollid')
             # --- STEP 2: Create GatePass entries for each visitor ---
+            all_names = []
             for i in range(1, no_of_person + 1):
                 name = request.POST.get(f"name_{i}")
+                if name:   # only add if not empty
+                    all_names.append(name)
+
                 used_enrollids = GatePass.objects.filter(valid_to__date__gte=today).values_list('cardNo', flat=True)
                 available_enrolls = all_enrolls.exclude(enrollid__in=used_enrollids)
                 # Assign first available enrollid as card_no
@@ -1474,7 +1500,7 @@ def gatepass_view(request):
                     )
                 except Exception as e:
                     messages.error(request, f"Error creating employee record: {str(e)}")
-
+            add_gatepass_in(passNo, no_of_person, all_names, api_type="view")
             messages.success(request, 'Visitor(s) added successfully!')
             return redirect('home')
 
@@ -1496,7 +1522,7 @@ def gatepass_view(request):
                     TRID='2',
                     Errorstatus=0
                 )
-
+                mark_gatepass_out(card_no, api_type="view")
                 messages.success(request, 'Visitor marked as OUT successfully!')
             else:
                 messages.error(request, 'No active visitor entry found for this card.')
@@ -1516,8 +1542,11 @@ def gatepass_viewout(request):
                 return render(request, 'pages/new_entry_visitor.html', {})
             all_enrolls = EnrollMast.objects.filter(department=visitor_department.DepartId).only('enrollid')
             # --- STEP 2: Create GatePass entries for each visitor ---
+            all_names =[]
             for i in range(1, no_of_person + 1):
                 name = request.POST.get(f"name_{i}")
+                if name:   # only add if not empty
+                    all_names.append(name)
                 used_enrollids = GatePass.objects.filter(valid_to__date__gte=today).values_list('cardNo', flat=True)
                 available_enrolls = all_enrolls.exclude(enrollid__in=used_enrollids)
                 # Assign first available enrollid as card_no
@@ -1570,7 +1599,7 @@ def gatepass_viewout(request):
                     )
                 except Exception as e:
                     messages.error(request, f"Error creating employee record: {str(e)}")
-
+            add_gatepass_in(passNo, no_of_person, all_names, api_type="viewout")
             messages.success(request, 'Visitor(s) added successfully!')
             return redirect('home')
 
@@ -1592,7 +1621,7 @@ def gatepass_viewout(request):
                     TRID='4',
                     Errorstatus=0
                 )
-
+                mark_gatepass_out(card_no, api_type="viewout")
                 messages.success(request, 'Visitor marked as OUT successfully!')
             else:
                 messages.error(request, 'No active visitor entry found for this card.')
@@ -1610,3 +1639,144 @@ def auto_report(request):
             generate_report_for_date(dt)
         else:
             return HttpResponse(f"Report already exists for {dt}")
+
+#api working send data into another system
+def add_emp(empcode, Name, compid, DepartId, Desgid, enrollid):
+    url = "http://127.0.0.1:5000/api/employee/add/"
+    data = {"empcode": empcode, "Name": Name, "compid": compid, "DepartId": DepartId, "Desgid": Desgid, "enrollid": enrollid}
+    response = requests.post(url, json=data)
+    return response.json()
+
+def edit_emp(empcode, Name, pk):
+    url = f"http://127.0.0.1:5000/api/edit-employee/{pk}/"
+    data = {"empcode": empcode, "Name": Name}
+    response = requests.post(url, json=data)
+    return response.json()
+
+def delete_emp(pk):
+    url = f"http://127.0.0.1:5000/api/employee/delete/{pk}/"
+    response = requests.delete(url)
+    return response.json()  
+# ---------------- DEPARTMENT ----------------
+def add_dept(DepartName):
+    url = "http://127.0.0.1:5000/api/department/add/"
+    data = {"DepartName": DepartName}
+    response = requests.post(url, json=data)
+    return response.json()
+
+def edit_dept(pk, DepartName):
+    url = f"http://127.0.0.1:5000/api/department/edit/{pk}/"
+    data = {"DepartName": DepartName}
+    response = requests.post(url, json=data)
+    return response.json()
+
+def delete_dept(pk):
+    url = f"http://127.0.0.1:5000/api/department/delete/{pk}/"
+    response = requests.post(url)
+    return response.json()
+
+
+# ---------------- ENROLL ----------------
+def add_enroll(enrollid, DepartId):
+    url = "http://127.0.0.1:5000/api/enroll/add/"
+    data = {"enrollid": enrollid, "DepartId": DepartId}
+    response = requests.post(url, json=data)
+    return response.json()
+
+def delete_enrolls(pk):
+    url = f"http://127.0.0.1:5000/api/enroll/delete/{pk}/" 
+    response = requests.post(url)
+    return response.json()
+
+
+# ---------------- DESIGNATION ----------------
+def add_des(Designation, DepartId):
+    url = "http://127.0.0.1:5000/api/designation/add/"
+    data = {"Designation": Designation, "DepartId": DepartId}
+    response = requests.post(url, json=data)
+    return response.json()
+
+def edit_des(pk, designation, departid):
+    url = f"http://127.0.0.1:5000/api/designation/edit/{pk}/"
+    data = {
+        "Designation": designation.Designation,  # correct field
+        "DepartId": departid
+    }
+
+    response = requests.post(url, json=data)
+
+    print("Status:", response.status_code)
+    print("Response:", response.text)
+
+    if response.status_code == 204 or not response.text.strip():
+        return {"status": "success"}   # handle empty response safely
+
+    try:
+        return response.json()
+    except ValueError:
+        return {"error": "Invalid JSON", "raw": response.text}
+
+def delete_des(pk):
+    url = f"http://127.0.0.1:5000/api/designation/delete/{pk}/"
+    response = requests.post(url)
+    return response.json()
+
+
+# ---------------- COMPANY ----------------
+def add_comp(Company, Address):
+    url = "http://127.0.0.1:5000/api/company/add/"
+    data = {"Company": Company, "Address": Address}
+    response = requests.post(url, json=data)
+    return response.json()
+
+def edit_comp(pk, Company, Address):
+    url = f"http://127.0.0.1:5000/api/company/edit/{pk}/"
+    data = {"Company": Company, "Address": Address}
+    response = requests.post(url, json=data)
+    return response.json()
+
+def delete_comp(pk):
+    url = f"http://127.0.0.1:5000/api/company/delete/{pk}/"
+    response = requests.post(url)
+    return response.json()
+
+
+# ---------------- MACHINE ----------------
+def add_mach(machineno, SRNO, devicemodel, Name, Response):
+    url = "http://127.0.0.1:5000/api/machine/add/"
+    data = {"machineno": machineno, "SRNO": SRNO, "devicemodel": devicemodel, "Name": Name, "Response": Response}
+    response = requests.post(url, json=data)
+    return response.json()
+
+def edit_mach(machineno, SRNO, devicemodel, Name, Response, pk):
+    url = f"http://127.0.0.1:5000/api/machine/edit/{pk}/"
+    data = {"machineno": machineno, "SRNO": SRNO, "devicemodel": devicemodel, "Name": Name, "Response": Response}
+    response = requests.post(url, json=data)
+    return response.json()
+
+def delete_mach(pk):
+    url = f"http://127.0.0.1:5000/api/machine/delete/{pk}/"
+    response = requests.post(url)
+    return response.json()
+def add_gatepass_in(passNo, no_of_person, names, api_type="view"):
+    """
+    names = ["Rahul", "Amit", ...]
+    api_type = "view"  (machine 1/2) OR "viewout" (machine 3/4)
+    """
+    url = f"http://127.0.0.1:5000/api/gatepass/{api_type}/"
+    data = {"entry_type": "in", "passNo": passNo, "noOfPerson": len(names)}
+    for idx, n in enumerate(names, 1):
+        data[f"name_{idx}"] = n
+    return requests.post(url, json=data).json()
+
+def mark_gatepass_out(cardNo, api_type="view"):
+    """
+    api_type = "view" (machine 1/2) OR "viewout" (machine 3/4)
+    """
+    url = f"http://127.0.0.1:5000/api/gatepass/{api_type}/"
+    data = {"entry_type": "out", "cardNo": cardNo}
+    return requests.post(url, json=data).json()
+   
+
+# Example usage
+

@@ -15,7 +15,9 @@ def generate_report_for_date(report_date):
     if livedatas.exists():
         srnos = livedatas.values_list('SRNO', flat=True)
         enrollids = livedatas.values_list('EnrollID', flat=True)
+        sorted_livedatas = livedatas.order_by('EnrollID', 'PunchDate')
 
+        
         machines = MachineMast.objects.filter(SRNO__in=srnos)
         enrolls = EnrollMast.objects.filter(enrollid__in=enrollids)
         employees = EmpMast.objects.select_related('department', 'company', 'designation', 'enrollid').filter(enrollid__in=enrolls)
@@ -24,7 +26,7 @@ def generate_report_for_date(report_date):
         enroll_dict = {e.enrollid: e for e in enrolls}
         employee_dict = {e.enrollid_id: e for e in employees}
 
-        for live in livedatas:
+        for idx, live in enumerate(sorted_livedatas, start=1):  # add serial numbers
             machine = machine_dict.get(live.SRNO)
             if not machine:
                 continue
@@ -32,6 +34,7 @@ def generate_report_for_date(report_date):
             emp_data = employee_dict.get(enroll.id) if enroll else None
 
             data.append({
+                'srno': idx,   # add srno here
                 'monitor': live,
                 'machine': machine,
                 'employee': emp_data
@@ -39,7 +42,8 @@ def generate_report_for_date(report_date):
 
     context = {
         'data': data,
-        'selected_date': report_date
+        'selected_date': report_date,
+        'total': len(data)
     }
 
     html = render_to_string('pages/report_pdf.html', context)

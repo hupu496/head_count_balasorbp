@@ -110,10 +110,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     },
-    'mirror': {   # System 1's DB over shared folder
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': r'\\192.168.0.101\django\head_count_balasorbp\db.sqlite3',  # UNC path to System 1's DB file
-    }
+    
 
     }
 
